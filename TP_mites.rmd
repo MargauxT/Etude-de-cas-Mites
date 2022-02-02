@@ -1,0 +1,442 @@
+---
+title: "Étude de cas - GLM et valeurs manquantes"
+author: "Romane Lacoste-Badie, Margaux Touzé et Camille Loisel"
+date: "02/03/2022"
+header-includes:
+  - \DeclareUnicodeCharacter{0301}{/}
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lmtest)
+library(stats)
+library(car)
+library(MASS)
+#install.packages("ResourceSelection")
+library(ResourceSelection)
+library(ROCR)
+```
+
+```{=tex}
+\newpage
+\renewcommand{\contentsname}{Sommaire}
+\tableofcontents
+```
+\newpage
+
+Note à nous meme à dégager plus tard : j'ai rajouté le declareunicodecharacter 
+tout en haut sinon ca voulait pas sortir un pdf.
+
+# Modèle linéaire généralisé (GLM) avec R
+
+## Importation des données
+
+```{r}
+#mites<-read.csv("/Users/margauxtouze/Desktop/FAC/M2/S2/Étude de cas/Data/mites.csv")
+mites <- read.csv("/Users/romane/Université/Master 2 IS/S4/Étude de cas/data/mites.csv")
+str(mites)
+```
+pour LM : chercher à valider les hypothèses, ca marche pas, faire des transformations (Box Cox), réessayer de valider les hyp
+Si ca marche on dit quon pourrait sarreter la mais on cherche a aller plus loin
+Si ca marche PAS on cherche un autre modele : GLM
+(si abundance marche, possibilité de faire +1 pour éviter les valeurs=0)
+
+\newpage
+## 1. LM Gaussien
+
+Tester les hypothèses 
+
+# H. 1  Linéarité du modèle
+
+Représentation graphique : 
+
+1/ Galumna
+```{r}
+par(mfrow=c(1,2))
+lm.g.subsdens<-lm(Galumna~SubsDens, data=mites)
+plot(mites$SubsDens, mites$Galumna)
+abline(lm.g.subsdens, col=2)
+lm.g.watrcont<-lm(Galumna~WatrCont, data=mites)
+plot(mites$WatrCont, mites$Galumna)
+abline(lm.g.watrcont, col=2)
+```
+2/ pa
+```{r}
+par(mfrow=c(1,2))
+lm.pa.subsdens<-lm(pa~SubsDens, data=mites)
+plot(mites$SubsDens, mites$pa)
+abline(lm.pa.subsdens, col=2)
+lm.pa.watrcont<-lm(pa~WatrCont, data=mites)
+plot(mites$WatrCont, mites$pa)
+abline(lm.pa.watrcont, col=2)
+```
+3/ prop
+```{r}
+par(mfrow=c(1,2))
+lm.prop.subsdens<-lm(prop~SubsDens, data=mites)
+plot(mites$SubsDens, mites$prop)
+abline(lm.prop.subsdens, col=2)
+lm.prop.watrcont<-lm(prop~WatrCont, data=mites)
+plot(mites$WatrCont, mites$prop)
+abline(lm.prop.watrcont, col=2)
+```
+
+Test de Harvey-Collier :
+
+```{r}
+lm.g2<-lm(Galumna~WatrCont+SubsDens, data=mites)
+harvtest(lm.g2, data=mites)
+lm.pa2<-lm(pa~WatrCont+SubsDens, data=mites)
+harvtest(lm.pa2, data=mites)
+lm.prop2<-lm(prop~WatrCont+SubsDens, data=mites)
+harvtest(lm.prop2, data=mites)
+```
+
+
+# H2 
+```{r}
+lm.tot.g<-lm(Galumna~.-pa-prop-totalabund, data=mites)
+lm.tot.pa<-lm(pa~.-Galumna-prop-totalabund, data=mites)
+lm.tot.prop<-lm(prop~.-pa-Galumna-totalabund, data=mites)
+```
+Transformation de Box et Cox :
+
+Rédiger pour chaque plot : DIAPO 20 (+linéarité)
+
+- Residuals VS Fitted : 
+
+- Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du model sont distribués suivant une loi normale (les points doivent suivre la ligne pour repondre à cette hypothese) (H5)
+
+- Residuals VS Leverage (H) : Verifier si ya des points 
+
+(H2) : diapo 27 -> toujours vérifié pour MCO
+
+(H3) : Homoscédasticité : 
+-> Plot des résidus : "Scale-Location" (essayer de mettre que ce plot)
+```{r}
+plot(lm.tot.g, which = 3)
+plot(lm.tot.pa, which = 3)
+plot(lm.tot.prop, which = 3)
+```
+Ce plot est utilisé pour checker l'homocédasticité, la ligne doit etre horizontale parce que la variance est constante 
+
+-> Test de Breush-Pagan 
+Hyp : H0 : Le bruit est homocedastique 
+On retrouve le modele lineaire classique (dont le bruit est homocedastique, $\sigma_i^2=\sigma^2$ pour tout $i$)
+
+```{r}
+bptest(lm.tot.g)
+bptest(lm.tot.pa)
+bptest(lm.tot.prop)
+```
+Petites p values donc pas homocedastique
+
+(H4) : Non autocorrélation des erreurs 
+-> test de Durbin-Watson : 
+H0 : Les résidus sont non correles 
+```{r}
+dwtest(lm.tot.g)
+dwtest(lm.tot.pa)
+dwtest(lm.tot.prop)
+```
+On rejete pour pa et prop
+
+(H5) : Normalité des erreurs 
+```{r}
+plot(lm.tot.g, which = 2)
+plot(lm.tot.pa, which = 2)
+plot(lm.tot.prop, which = 2)
+```
+- Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du model sont distribués suivant une loi normale (les points doivent suivre la ligne pour repondre à cette hypothese) (H5)
+
+Si la rpz est (a peu pres) une droite, l'hyp de normalité est accepté
+
+-> Test de Shapiro-Wilks :
+H0 : normalité 
+```{r}
+shapiro.test(lm.tot.g$residuals)
+shapiro.test(lm.tot.pa$residuals)
+shapiro.test(lm.tot.prop$residuals)
+```
+Rejete H0 pour les trois
+
+(H7) : Non multicolinéarité des variables explicatives 
+
+
+```{r}
+plot(mites$SubsDens, mites$WatrCont)
+boxplot(mites$SubsDens~as.factor(mites$Substrate))
+
+barplot(table(mites$Substrate, mites$Topo), legend.text=T)
+```
+Faible tendance linéaire présente 
+Faire boxplot pour quanti-quali
+barplot : On observe que les 
+
+
+```{r}
+vif(lm.tot.g)
+vif(lm.tot.pa)
+vif(lm.tot.prop)
+```
+Toujours superieur a 1, >5 trop eleve donc pb de multicolineralité 
+
+CONCLUSION DU I) : 
+Hypotheses du LM pas veirifées donc on ne peux pas prendre un modele linéaire 
+
+Transformation Logit :
+```{r}
+logitTransform <- function(p) { log(p/(1-p)) }
+prop.logit <- logitTransform(mites$prop)
+plot(mites$prop, prop.logit)
+lm.prop.logit <- lm(prop.logit~.-pa-prop-totalabund-Galumna, data =mites)
+```
+Probleme car Lise ne test pas ses enoncés avant de nous les donner -> demander à Juju
+0 dans prop, donc probleme avec le logit car logit(0) non defini
+
+Tranformation arcsin : 
+```{r}
+asinTransform <- function(p) { asin(sqrt(p)) }
+prop.asin <- asinTransform(mites$prop)
+plot(mites$prop, prop.asin)
+lm.prop.asin <- lm(prop.asin~.-pa-prop-totalabund-Galumna, data =mites)
+```
+-> Re vérifier toutes les hypotheses comme dans le I)
+
+(H3) : Homoscédasticité : 
+-> Plot des résidus : "Scale-Location" 
+```{r}
+plot(lm.prop.asin, which =3)
+bptest(lm.prop.asin)
+```
+
+Pas tres concluant pour amélirorer les problemes de variance, car deja bien avant la transformation.
+
+Transformation de Box-Cox :
+```{r}
+boxcox 
+```
+
+
+\newpage
+## 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa) :
+
+Objectif : déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
+
+
+
+--- Recherche du meilleur modèle ---
+
+  - Méthode 'à la main'
+
+Pour débuter, on construit le modèle général (avec toutes les variables explicatives) pour déterminer lesquelles sont significatives:
+
+```{r}
+glm.tot.pa <- glm(pa~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial")
+summary(glm.tot.pa)
+```
+Daprès cette sortie, les variables significatives semblent être WatrCont, SubsDens et Topo. 
+
+On peut alors tester un modèle uniquement avec celles-ci :
+
+```{r}
+glm.best.pa <- glm(pa~WatrCont + SubsDens + Topo, data=mites, family = "binomial")
+summary(glm.best.pa)
+```
+Ce modèle semble mieux car les variables sont toutes vraiment significatives.
+
+Afin de s'assurer de la significativité des paramètres, nous pouvons réaliser un test de déviance :
+
+```{r}
+anova(glm.tot.pa, test = 'Chisq')
+```
+Les mêmes variables qu'auparavnt ressortent comme significatives. Cela confirme notre choix de garder les variables WatrCont, SubsDens et Topo dans notre modèle.
+
+Nous pouvons comparer ce modèle obtenu avec celui déterminé par une sélection automatique.
+
+  - Méthode de sélection stepwise descendante avec le critère AIC
+
+```{r}
+glm.tot.pa.step <- step(glm.tot.pa, direction = "backward")
+glm.tot.pa.step$formula
+```
+
+La sélection automatique de modèle retient également le modèle contenant les variables WatrCont, SubsDens et Topo car c'est celui pour lequel l'AIC est le plus faible.
+
+Par conséquent, nous retenons ce modèle pour la suite.
+
+
+
+--- Interprétation des coefficients ---
+
+La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio.
+
+```{r}
+exp(glm.best.pa$coefficients)
+```
+
+Ici, les coefficients de WatrCont et SubsDens étant proches de 1, on en déduit que l'augmentation d'une unité du contenu en eau ou de la densité du substrat n'a pas vraiment d'impact sur la présence de mites. Cependant, le coefficient associé à la topologie est très nettement supérieur à 1. Cela qui signifique que lorsque la topographie est de type Hummock, alors il y a un fort risque de présence de mites.
+
+
+
+--- Evaluation de l'ajustement du modèle ---
+
+Pour tester la qualité de l'ajustement de notre modèle, on peut utiliser le test de Pearson basé sur les résidus de Pearson.
+
+```{r}
+res <- sum(residuals(glm.best.pa, type = "pearson")^2)
+ddl <- df.residual(glm.best.pa)
+pvalue = 1 - pchisq(res,ddl)
+pvalue
+```
+
+La p-value était très grande, on admet que le modèle est très bien adapté aux données.
+
+On peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la pertinence du modèle :
+
+```{r}
+hoslem.test(mites$pa, fitted(glm.best.pa))
+```
+De même, la très grande p-value nous indique que le modèle est bien adapté aux données.
+
+Avant de valider définitivement le choix de ce modèle, il faut évaluer son pouvoir prédictif.
+
+
+
+--- Evaluation de son pouvoir prédictif ---
+
+Pour évaluer le pouvoir prédictif de notre modèle, nous allons juger les prédictions de notre modèle grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction de modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci.
+Nous obtenons alors les prédictions de pa pour tous les individus et nous pouvons tracer la courbe ROC.
+
+```{r}
+n <- nrow(mites)
+pred=1:n
+for (i in 1:n){
+  # On estime le modèle sans i (on l'enlève lorsqu'on estime le modèle)
+  fit=glm(pa~WatrCont + SubsDens + Topo, data=mites, family="binomial", subset=-i)
+  # On prédit la proba asscoiée à i
+  pred[i]=predict(fit,mites[i,-2], type="response")
+}
+
+pr=prediction(pred,mites$pa)
+roc=performance(pr, measure="tpr",x.measure="fpr")
+plot(roc)
+```
+Cette courbe résume le taux de vrais positifs en fonction du taux de faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la diagonale. Ici, nous avons une courbe largement au dessus de la diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe (AUC) :
+
+```{r}
+perf <- performance(pr, "auc")
+perf@y.values[[1]]
+```
+
+L'aire sous la courbe est proche de 1 : le pouvoir prédictif de notre modèle est alors très bon.
+
+Enfin, nous pouvons résumer les bonnes et mauvaises prédictions de notre modèle grâce à une matrice de confusion. Pour cela, il est intéressant de déterminer en amont le seuil à partir duquel on admet la présence de mites. On trace alors la courbe du taux d'erreur en fonction des différents seuils.
+
+```{r}
+res.err=performance(pr,measure = "err")
+plot(res.err)
+```
+Nous remarquons que le taux d'erreur le plus faible est pour un seuil de 0.5. C'est alors le seuil que nous allons choisir pour étblir notre matrice de confusion.
+
+```{r}
+table(pred>0.5, mites$pa)
+```
+
+D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. 
+
+Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient des bons résultats, tant sur son ajustement que sur son pouvoir prédictif.
+
+\newpage
+## 3. GLM Régression Logistique sur les données agrégées
+
+Objectif : expliquer la fréquence relative `prop`, déterminer le meilleur modèle pour cette variable réponse, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif. 
+
+### Recherche du meilleur modèle
+
+La variable `prop` est, comme son nom l'indique, une variable en proportion. Malgré qu'il ne s'agisse pas d'une variable binaire, ce cas est proche d'une régression logistique. Sous R, on peut utiliser la fonction `glm` de manière semblable à lorsque l'on fait une régression logistique classique, mais en précisant cette fois des poids a priori.  
+
+On suivra la même méthode que dans la partie précédente pour chercher le meilleur modèle : une recherche à la main dans un premier temps, puis une méthode de sélection automatique.  
+
+**Recherche à la main :**
+
+```{r}
+prop.reg.tot <- glm(prop~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial", weights = totalabund)
+summary(prop.reg.tot)
+```
+Lorsque l'on effectue le modèle complet, on obtient un warning qui nous dit qu'une ou plusieurs observations du jeu de données sont prédites à 0 ou 1, ce qui ne veut pas forcément dire que la régression logistique est mauvaise. On décide donc d'ignorer le warning. Cependant, on voit qu'il n'y que très peu de variables significatives. On créé un modèle avec les trois variables les plus significatives du modèle complet : `WatrCont`, `SubsDens` et `Topo`.  
+
+
+```{r}
+prop.reg.2 <- glm(prop~WatrCont + SubsDens + Topo  , data=mites, family = "binomial", weights = totalabund)
+summary(prop.reg.2)
+```
+
+Cette fois-ci on voit que toutes les variables, ainsi que la constante sont significatives pour le test de Wald. Également, l'AIC est plus petit que pour le modèle complet et donc meilleur.  
+
+**Recherche automatique :**
+
+```{r}
+prop.reg.back<-step(prop.reg.tot, direction="backward")
+prop.reg.back$formula
+summary(prop.reg.back)
+```
+Avec une procédure de sélection backward, on garde les 4 variables : `WatrCont`, `SubsDens`, `Topo` et `Shrub`. 
+Attention : test de Wald : Shrub non significative.
+
+On va maintenant comparer ces trois modèles avec le BIC :
+
+```{r}
+BIC(prop.reg.back)
+BIC(prop.reg.2)
+BIC(prop.reg.tot)
+```
+
+On garde le modèle à 3 variables qui minimise le BIC.  
+
+Test de modèle emboîté :celui à 3 variables contre celui à 4 variables.
+```{r}
+anova(prop.reg.2, prop.reg.back, test="Chisq")
+```
+p-val<0.05 donc la variable qu'il y a en plus dans le modèle à 4 variables est significative.
+
+Interprétation des coefficients :
+
+
+Pouvoir prédictif :
+
+
+
+
+\newpage
+## 4. GLM Régression Poisson sur Abondance (Galumna) :
+
+Modéliser l'abondance de l'espèce Galumna en fonction des caractéristiques du substrat (son contenu en eau 'WartCont' et sa densité 'SubsDens') et si nécessaire des autres variables environmentales.
+
+```{r}
+glm.poi <- glm(Galumna~WatrCont + SubsDens, family = poisson(link = "log"), data = mites )
+summary(glm.poi)
+
+plot(mites$Galumna, mites$WatrCont, col="RED", pch=20,
+     xlab="Abondance de Galumna", ylab="Contenu en eau", 
+     main="L'abondance de Galumna en fonction de son contenu en eau")
+abline(glm.poi, lwd= 1)
+```
+
+Rappelons que le modèle linéaire général est un cas particulier de GLM, on a : $Y = X\beta + e$ avec $e = (\epsilon_1, \dots, \epsilon_n)^T$ et $\epsilon_i$ sont i.i.d suivant $N(0,\theta^2)$.
+
+blablabla 
+
+modele : $ln(Y)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$ ? 
+
+blabla 
+
+
+
+
+

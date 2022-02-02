@@ -194,7 +194,7 @@ Transformation Logit :
 logitTransform <- function(p) { log(p/(1-p)) }
 prop.logit <- logitTransform(mites$prop)
 plot(mites$prop, prop.logit)
-lm.prop.logit <- lm(prop.logit~.-pa-prop-totalabund-Galumna, data =mites)
+#lm.prop.logit <- lm(prop.logit~.-pa-prop-totalabund-Galumna, data =mites)
 ```
 Probleme car Lise ne test pas ses enoncés avant de nous les donner -> demander à Juju
 0 dans prop, donc probleme avec le logit car logit(0) non defini
@@ -369,48 +369,106 @@ On suivra la même méthode que dans la partie précédente pour chercher le mei
 prop.reg.tot <- glm(prop~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial", weights = totalabund)
 summary(prop.reg.tot)
 ```
-Lorsque l'on effectue le modèle complet, on obtient un warning qui nous dit qu'une ou plusieurs observations du jeu de données sont prédites à 0 ou 1, ce qui ne veut pas forcément dire que la régression logistique est mauvaise. On décide donc d'ignorer le warning. Cependant, on voit qu'il n'y que très peu de variables significatives. On créé un modèle avec les trois variables les plus significatives du modèle complet : `WatrCont`, `SubsDens` et `Topo`.  
+Lorsque l'on effectue le modèle complet, on obtient un warning qui nous dit qu'une ou plusieurs observations du jeu de données sont prédites à 0 ou 1, ce qui ne veut pas forcément dire que la régression logistique est mauvaise. On décide donc d'ignorer le warning. Cependant, on voit qu'il n'y que très peu de variables significatives. On créé un modèle avec les deux variables les plus significatives du modèle complet : `WatrCont` et `SubsDens`.  
 
 
 ```{r}
-prop.reg.2 <- glm(prop~WatrCont + SubsDens + Topo  , data=mites, family = "binomial", weights = totalabund)
+prop.reg.2 <- glm(prop~WatrCont + SubsDens, data=mites, family = "binomial", weights = totalabund)
 summary(prop.reg.2)
 ```
 
-Cette fois-ci on voit que toutes les variables, ainsi que la constante sont significatives pour le test de Wald. Également, l'AIC est plus petit que pour le modèle complet et donc meilleur.  
+Cette fois-ci on voit que toutes les variables, ainsi que la constante sont significatives pour le test de Wald. L'AIC est très proche de celui du modèle complet : environ 158.
 
 **Recherche automatique :**
 
+On effectue maintenant une recherche automatique du meilleur modèle en partant du plus gros modèle et en se basant sur le critère BIC, critère explicatif.
 ```{r}
-prop.reg.back<-step(prop.reg.tot, direction="backward")
+prop.reg.back<-step(prop.reg.tot, direction="backward", k=log(nrow(mites)))
 prop.reg.back$formula
-summary(prop.reg.back)
 ```
-Avec une procédure de sélection backward, on garde les 4 variables : `WatrCont`, `SubsDens`, `Topo` et `Shrub`. 
-Attention : test de Wald : Shrub non significative.
+Avec une procédure de sélection backward, on garde 3 variables : `WatrCont`, `SubsDens` et `Topo`. 
 
 On va maintenant comparer ces trois modèles avec le BIC :
 
 ```{r}
-BIC(prop.reg.back)
-BIC(prop.reg.2)
 BIC(prop.reg.tot)
+BIC(prop.reg.2)
+BIC(prop.reg.back)
 ```
+Le modèle à trois variables est celui qui minimise le BIC. On peut tout de même effectuer un test de modèle emboîtés afin de regarder si la troisième variable `Topo` est bien significative. On teste donc le modèle à 2 variables contre celui à 3 variables.
 
-On garde le modèle à 3 variables qui minimise le BIC.  
-
-Test de modèle emboîté :celui à 3 variables contre celui à 4 variables.
 ```{r}
-anova(prop.reg.2, prop.reg.back, test="Chisq")
+anova(prop.reg.2, prop.reg.back,test="Chisq")
 ```
-p-val<0.05 donc la variable qu'il y a en plus dans le modèle à 4 variables est significative.
+La p-value est inférieure à 0.05 donc la variable `Topo` est significative.
 
-Interprétation des coefficients :
+Le meilleur modèle  s'écrit donc :
 
+et voici son summary :
+
+```{r}
+summary(prop.reg.back)
+```
+On remarque que toutes les variables sont significatives d'après le test de Wald.
+
+### Interprétation des coefficients 
+
+On peut interpréter les coefficients du modèle pour nos trois variables grâce à leurs odds-ratios. L'odd-ratio pour la variable $j$ est égal à $\exp(\beta_j)$.
+
+```{r}
+round(exp(prop.reg.back$coefficients),2)
+```
+L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa p-value associée au test de Wald est inférieure à 5% donc on peut dire que la proportion de mites est significativement moins élevée si la quantité d'eau dans le sol augmente.
+L'odd-ratio de `SubsDens` est quant à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%. Cela signifie que la proportion de mites sera significativement plus importante si la densité du substrat augmente.  
+Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à 5%. Donc on peut conclure que si la topographie est de type Hummock, la proportion de mites sera significativement plus élevée.  
+
+### Diagnostics
+
+**Effet levier :**
+
+```{r}
+p<-length(prop.reg.back$coefficients)
+n<-nrow(mites)
+plot(influence(prop.reg.back)$hat, type="h", ylab="h_ii")
+abline(h=c(2*p/n, 3*p/n), col=2)
+```
+On observe que 5 observations peuvent être déclarées comme "points leviers", c'est-à-dire qu'ils déterminent fortement leur propre estimation.
+
+**Points influents :**
+
+Les points influents sont des points qui influent sur le modèle de telle sorte que si on les enlèves, l'estimation des coefficients sera fortement changée. Pour les observer, on représente leur distance de Cook.
+
+```{r}
+plot(cooks.distance(prop.reg.back), type="h", ylab="Distance de Cook")
+```
+On relève plusieurs points influents. Notamment la 8ème observation, qui était déjà un point levier. 
+
+**Analyse des résidus :**
+
+Enfin, nous allons analyser les résidus. On effectue pour cela un test de Pearson. L'hypothèse nulle de ce test est : $H_0 :=$ le modèle ajuste correctement les données.  
+
+```{r}
+res <- sum(residuals(prop.reg.back, type = "pearson")^2)
+ddl <- n-(p+1)
+pvalue <- 1 - pchisq(res,ddl)
+pchisq(res,ddl)
+```
+PROBLÈMEEEEEEEEEEEE
+
+```{r}
+res<-residuals(prop.reg.back, type="pearson", )
+plot(res, ylim=c(-3,5), ylab="Residuals")
+abline(h=c(-2,2), col=2)
+```
+```{r}
+plot(predict(prop.reg.back, type="r"), res, xlab="Fitted values", ylab="Residuals", ylim=c(-3,8))
+abline(h=c(-2,2), col=2)
+```
+CONCLURE !
 
 Pouvoir prédictif :
 
-
+???
 
 
 \newpage

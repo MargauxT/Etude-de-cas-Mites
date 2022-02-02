@@ -414,9 +414,15 @@ Pouvoir prédictif :
 
 
 \newpage
-## 4. GLM Régression Poisson sur Abondance (Galumna) :
+## 4) GLM Régression Poisson sur Abondance (Galumna) :
 
-Modéliser l'abondance de l'espèce Galumna en fonction des caractéristiques du substrat (son contenu en eau 'WartCont' et sa densité 'SubsDens') et si nécessaire des autres variables environmentales.
+Objectif : Modéliser l'abondance de l'espèce Galumna en fonction des caractéristiques du substrat (son contenu en eau 'WartCont' et sa densité 'SubsDens') et si nécessaire des autres variables environmentales.
+
+Rappelons que le modèle linéaire général est un cas particulier de GLM, on a : $Y = X\beta + e$ avec $e = (\epsilon_1, \dots, \epsilon_n)^T$ et $\epsilon_i$ sont i.i.d suivant $N(0,\theta^2)$.
+
+Pour une distribution Poisson $y~Pois(\lambda)$ avec le lien log par défault nous avons $log(\lambda)=\eta$ avec l'inverse de ce lien $\lambda=e^\eta$.
+
+Comme pour la régression logistique, la régression de Poisson utilise la fonction glm. Il faut spécifier la famille poisson et (optionnellement) le lien log. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
 
 ```{r}
 glm.poi <- glm(Galumna~WatrCont + SubsDens, family = poisson(link = "log"), data = mites )
@@ -428,14 +434,21 @@ plot(mites$Galumna, mites$WatrCont, col="RED", pch=20,
 abline(glm.poi, lwd= 1)
 ```
 
-Rappelons que le modèle linéaire général est un cas particulier de GLM, on a : $Y = X\beta + e$ avec $e = (\epsilon_1, \dots, \epsilon_n)^T$ et $\epsilon_i$ sont i.i.d suivant $N(0,\theta^2)$.
+Essayons un modèle plus complexe avec interaction entre son contenu en eau et sa densité.
+```{r}
+glm.poi1 <- glm(Galumna~WatrCont * SubsDens , family = poisson(link = "log"), data = mites )
+summary(glm.poi1)
+exp(0.023)
+```
+L'AIC de ce modele est égale à 174.31, ce qui est sensiblement égale au premier modèle qui avait un AIC de 174.65. Cependant, on observe dans le `summary` que la varible `SubsDens` ainsi que la variable interaction `WatrCont:SubsDens` ne sont pas significatives. Ce modele n'a donc pas un meilleur ajustement, nous le rejeton. 
 
-blablabla 
+Le modele selectionné s'écrit donc : $$ln(\lambda)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$$
+ce qui nous donne à l'aide du `summary` de notre modèle :
+$$ln(\lambda)=1.89-0.008*WatrCont+0.023*SubsDens$$
+Nous allons maintenant interpreter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\mu_i=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$, puis de déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
 
-modele : $ln(Y)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$ ? 
-
-blabla 
-
+- Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable SubsDens reste constante. Nous avons donc le facteur $e^-0.008=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
+- Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur  $e^0.023=1.023267$, soit 
 
 
 

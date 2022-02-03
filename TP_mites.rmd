@@ -485,18 +485,12 @@ Comme pour la régression logistique, la régression de Poisson utilise la fon
 ```{r}
 glm.poi <- glm(Galumna~WatrCont + SubsDens, family = poisson(link = "log"), data = mites )
 summary(glm.poi)
-
-plot(mites$Galumna, mites$WatrCont, col="RED", pch=20,
-     xlab="Abondance de Galumna", ylab="Contenu en eau", 
-     main="L'abondance de Galumna en fonction de son contenu en eau")
-abline(glm.poi, lwd= 1)
 ```
 
 Essayons un modèle plus complexe avec interaction entre son contenu en eau et sa densité.
 ```{r}
 glm.poi1 <- glm(Galumna~WatrCont * SubsDens , family = poisson(link = "log"), data = mites )
 summary(glm.poi1)
-exp(0.023)
 ```
 L'AIC de ce modele est égale à 174.31, ce qui est sensiblement égale au premier modèle qui avait un AIC de 174.65. Cependant, on observe dans le `summary` que la varible `SubsDens` ainsi que la variable interaction `WatrCont:SubsDens` ne sont pas significatives. Ce modele n'a donc pas un meilleur ajustement, nous le rejeton. 
 
@@ -506,7 +500,38 @@ $$ln(\lambda)=1.89-0.008*WatrCont+0.023*SubsDens$$
 Nous allons maintenant interpreter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\mu_i=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$, puis de déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
 
 - Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable SubsDens reste constante. Nous avons donc le facteur $e^-0.008=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
-- Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur  $e^0.023=1.023267$, soit 
+- Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur  $e^0.023=1.023267$. On en conclut que la densité n'influe pas sur l'abondance de Galumna. 
+
+Nous allons maintenant tester si nous avons de la surdispersion dans notre modèle. Par définition, nous avons que quand la déviance résiduelle est supérieur au nombre de degrés résiduels, le modèle est surdispersé.
+On peut estimer un paramètre de surdispersion $$\phi = \fract_{Degrès de liberté résiduels}^{Déviance résiduelle}$$.
+Nous avons donc $\frac_{101.49}^{67}=1.514776$. 
+Sous l'hypothèse nulle de non surdispersion ($\phi=1$), la deviance D suit une loi du $\chi^2$ à $(n-p)=70-3=67$ degrès de liberté. 
+Rappelons que nous rejetons $H_0$ si $D>\chi^2_{67,0.95}$ avec d'après la table de la loi du khi-deux, $chi^2_{67,0.95}=87,11$. Dans notre `summary` de notre modèle nous avons que $D=101.49$ pour 67 degrès de liberté. Nous rejetons donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos données. Nous savons que la non-indépendance des observations individuelles peut causer une surdispersion des données par rapport aux suppositions de la distribution de Poisson. 
+
+Pour determiner si le $\chi^2$ diffère significativement de la valeur attendue selon la distribution de Poisson, nous pouvons calculer la probabilité d'avoir obtenu un $\chi^2$ plus élevé si le modèle est correct.
+```{r}
+chisq <- sum((mites$Galumna-fitted(glm.poi))^2/fitted(glm.poi))
+1-pchisq(chisq, df=glm.poi$df.residual)
+```
+```{r}
+disp <- chisq/glm.poi$df.residual
+disp
+```
+L'estimé du paramètre de dispersion est de $\hat{c}=2.1$. Cependant, l'estimation de ce paramètre de dispersion n'est pas trop élevé. Les estimés des coefficients de la régression de Poisson demeurent valides, mais il faut multiplier leurs erreurs-types par $\sqrt{\hat{c}}$. Autrement dit, la surdispersion n'introduit pas de biais, mais augmente l'incertitude sur les valeurs des coefficients. 
+
+Pour corriger les erreurs-types, nous allons ajouter un argument `disperson` dans la fonction `summary`. Ce qui revient à utiliser la famille `quasipoisson` dans notre modèle.
+```{r}
+summary(glm.poi, dispersion = disp)
+glm.poi2 <- glm(Galumna~WatrCont+SubsDens , family = quasipoisson, data = mites )
+summary(glm.poi2)
+```
+
+
+
+
+
+
+
 
 
 

@@ -240,6 +240,7 @@ Pour débuter, on construit le modèle général (avec toutes les variables expl
 glm.tot.pa <- glm(pa~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial")
 summary(glm.tot.pa)
 ```
+
 Daprès cette sortie, les variables significatives semblent être WatrCont, SubsDens et Topo. 
 
 On peut alors tester un modèle uniquement avec celles-ci :
@@ -250,25 +251,35 @@ summary(glm.best.pa)
 ```
 Ce modèle semble mieux car les variables sont toutes vraiment significatives.
 
-Afin de s'assurer de la significativité des paramètres, nous pouvons réaliser un test de déviance :
+Afin de s'assurer de la significativité du retrait des autres variables, nous pouvons réaliser un test de déviance :
 
 ```{r}
-anova(glm.tot.pa, test = 'Chisq')
+anova(glm.best.pa, glm.tot.pa, test = 'Chisq')
 ```
-Les mêmes variables qu'auparavnt ressortent comme significatives. Cela confirme notre choix de garder les variables WatrCont, SubsDens et Topo dans notre modèle.
+La grande p-value nous indique que les variables présentent dans le plus grand modèle mais pas dans les plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critères BIC pour chacuns des euc modèles : 
+
+```{r}
+BIC(glm.tot.pa)
+BIC(glm.best.pa)
+```
+
+En accord avec les résultats précédents, le critère BIC est inférieur pour le deuxième modèle. Cela confirme notre choix de garder uniquement les variables WatrCont, SubsDens et Topo dans notre modèle.
 
 Nous pouvons comparer ce modèle obtenu avec celui déterminé par une sélection automatique.
 
-  - Méthode de sélection stepwise descendante avec le critère AIC
+  - Méthode de sélection stepwise descendante avec le critère BIC
 
 ```{r}
-glm.tot.pa.step <- step(glm.tot.pa, direction = "backward")
+n <- nrow(mites)
+glm.tot.pa.step <- step(glm.tot.pa, direction = "backward", k = log(n))
 glm.tot.pa.step$formula
 ```
 
-La sélection automatique de modèle retient également le modèle contenant les variables WatrCont, SubsDens et Topo car c'est celui pour lequel l'AIC est le plus faible.
+La sélection automatique de modèle retient également le modèle contenant les variables WatrCont, SubsDens et Topo car c'est celui pour lequel le BIC est le plus faible.
 
-Par conséquent, nous retenons ce modèle pour la suite.
+Par conséquent, nous retenons le modèle suivant pour la suite :
+
+$$\hat{Pa}= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock$$
 
 
 
@@ -280,7 +291,8 @@ La sortie de notre modèle indique que le contenu en eau, la densité du substra
 exp(glm.best.pa$coefficients)
 ```
 
-Ici, les coefficients de WatrCont et SubsDens étant proches de 1, on en déduit que l'augmentation d'une unité du contenu en eau ou de la densité du substrat n'a pas vraiment d'impact sur la présence de mites. Cependant, le coefficient associé à la topologie est très nettement supérieur à 1. Cela qui signifique que lorsque la topographie est de type Hummock, alors il y a un fort risque de présence de mites.
+Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (WatrCont), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis ce que pour une unité de densité du substrat (SubsDens) en plus, le risque est plus élevé de $18$%. Enfin, lorsque de la topographie est de type Hummock, il y a énroméménet de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
+
 
 
 
@@ -302,6 +314,7 @@ On peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la pertinen
 ```{r}
 hoslem.test(mites$pa, fitted(glm.best.pa))
 ```
+
 De même, la très grande p-value nous indique que le modèle est bien adapté aux données.
 
 Avant de valider définitivement le choix de ce modèle, il faut évaluer son pouvoir prédictif.
@@ -310,11 +323,10 @@ Avant de valider définitivement le choix de ce modèle, il faut évaluer son po
 
 --- Evaluation de son pouvoir prédictif ---
 
-Pour évaluer le pouvoir prédictif de notre modèle, nous allons juger les prédictions de notre modèle grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction de modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci.
+Pour évaluer le pouvoir prédictif de notre modèle, nous allons juger ses prédictions grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction du modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci.
 Nous obtenons alors les prédictions de pa pour tous les individus et nous pouvons tracer la courbe ROC.
 
 ```{r}
-n <- nrow(mites)
 pred=1:n
 for (i in 1:n){
   # On estime le modèle sans i (on l'enlève lorsqu'on estime le modèle)
@@ -327,6 +339,7 @@ pr=prediction(pred,mites$pa)
 roc=performance(pr, measure="tpr",x.measure="fpr")
 plot(roc)
 ```
+
 Cette courbe résume le taux de vrais positifs en fonction du taux de faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la diagonale. Ici, nous avons une courbe largement au dessus de la diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe (AUC) :
 
 ```{r}
@@ -342,15 +355,19 @@ Enfin, nous pouvons résumer les bonnes et mauvaises prédictions de notre modè
 res.err=performance(pr,measure = "err")
 plot(res.err)
 ```
+
 Nous remarquons que le taux d'erreur le plus faible est pour un seuil de 0.5. C'est alors le seuil que nous allons choisir pour étblir notre matrice de confusion.
 
 ```{r}
 table(pred>0.5, mites$pa)
 ```
 
-D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. 
+D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. Par conséquent, le taux d'erreur est de $\frac{7}{70}=0.1$. On peut en conclure que ce modèle a de bonnes qualités prédictives.
 
 Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient des bons résultats, tant sur son ajustement que sur son pouvoir prédictif.
+
+
+
 
 \newpage
 ## 3. GLM Régression Logistique sur les données agrégées
@@ -449,6 +466,7 @@ Nous allons maintenant interpreter les coefficients de notre modèle. Nous allon
 
 - Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable SubsDens reste constante. Nous avons donc le facteur $e^-0.008=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
 - Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur  $e^0.023=1.023267$, soit 
+
 
 
 

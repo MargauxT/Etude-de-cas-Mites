@@ -45,7 +45,7 @@ Note à nous meme à dégager plus tard : j'ai rajouté le declareunicodecharact
 
 \newpage
 
-## Introduction
+# Introduction
 
 Présenter les données, expliquer la démarche
 
@@ -53,7 +53,7 @@ pour LM : chercher à valider les hypothèses, ca marche pas, faire des transfor
 
 \newpage
 
-## 1. LM Gaussien
+# 1. LM Gaussien
 
 Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire gaussien pour chaque variable réponse que l'on cherche à expliquer : `Galumna`, `prop`, `pa`. Mais afin de constuire un tel modèle, nous émettons plusieurs hypothèses. Le premier travail consiste donc à regarder si ces hypothèses sont vérifiées. Rappelons les hypothèses du modèle linéaire gaussien :
 
@@ -120,7 +120,7 @@ lm.prop2<-lm(prop~WatrCont+SubsDens, data=mites)
 harvtest(lm.prop2, data=mites)
 ```
 
-# H2
+### (H2)
 
 ```{r}
 lm.tot.g<-lm(Galumna~.-pa-prop-totalabund, data=mites)
@@ -136,9 +136,9 @@ Rédiger pour chaque plot : DIAPO 20 (+linéarité)
 
 -   Residuals VS Leverage (H) : Verifier si ya des points
 
-(H2) : diapo 27 -\> toujours vérifié pour MCO
+### (H2) : diapo 27 -\> toujours vérifié pour MCO
 
-(H3) : Homoscédasticité : -\> Plot des résidus : "Scale-Location" (essayer de mettre que ce plot)
+### (H3) : Homoscédasticité : -\> Plot des résidus : "Scale-Location" (essayer de mettre que ce plot)
 
 ```{r}
 plot(lm.tot.g, which = 3)
@@ -158,7 +158,7 @@ bptest(lm.tot.prop)
 
 Petites p values donc pas homocedastique
 
-(H4) : Non autocorrélation des erreurs -\> test de Durbin-Watson : H0 : Les résidus sont non correles
+### (H4) : Non autocorrélation des erreurs -\> test de Durbin-Watson : H0 : Les résidus sont non correles
 
 ```{r}
 dwtest(lm.tot.g)
@@ -168,7 +168,7 @@ dwtest(lm.tot.prop)
 
 On rejete pour pa et prop
 
-(H5) : Normalité des erreurs
+### (H5) : Normalité des erreurs
 
 ```{r}
 plot(lm.tot.g, which = 2)
@@ -250,7 +250,7 @@ boxcox
 
 \newpage
 
-## 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa) :
+# 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa) :
 
 Objectif : déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
 
@@ -386,7 +386,7 @@ Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce
 
 \newpage
 
-## 3. GLM Régression Logistique sur les données agrégées
+# 3. GLM Régression Logistique sur les données agrégées
 
 Objectif : expliquer la fréquence relative `prop`, déterminer le meilleur modèle pour cette variable réponse, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
 
@@ -509,7 +509,7 @@ On voit que les résidus sont répartis de façon homogènes autour de l'axe des
 
 \newpage
 
-## 4. GLM Régression Poisson sur Abondance (Galumna) :
+# 4. GLM Régression Poisson sur Abondance (Galumna) :
 
 Objectif : Modéliser l'abondance de l'espèce Galumna en fonction des caractéristiques du substrat (son contenu en eau 'WartCont' et sa densité 'SubsDens') et si nécessaire des autres variables environmentales.
 
@@ -570,7 +570,7 @@ Conclure quelque chose ?!
 
 [**Données manquantes :**]{.underline}
 
-5.  Simulations scénarios NA
+# 5.  Simulations scénarios NA
 
 ```{r}
 set.seed(123)
@@ -579,7 +579,7 @@ library(mvtnorm)
 library(stats)
 ```
 
-I.  Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne $\mu =\left(\begin{array}\\0\\0\end{array}\right)$ et de variance $\left(\begin{array}\\1&0.5\\0.5&1\end{array}\right)$ et ajouter des données manquantes sur Y selon :
+### I.  Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne $\mu =\left(\begin{array}\\0\\0\end{array}\right)$ et de variance $\left(\begin{array}\\1&0.5\\0.5&1\end{array}\right)$ et ajouter des données manquantes sur Y selon :
 
 ```{r}
 n <- 100
@@ -589,7 +589,7 @@ don <- rmvnorm(n=n, mean = mu, sigma = matcov)
 colnames(don) <- c("X", "Y") 
 ```
 
-a.  Un mécanisme **MCAR** tel que $P(M=0)=0.35$.
+### a.  Un mécanisme **MCAR** tel que $P(M=0)=0.35$.
 
 ```{r}
 set.seed(123)
@@ -603,7 +603,7 @@ don.ismcar <- as.data.frame(don.ismcar) # création du jeu avec 0.35 de NA pour 
 summary(don.ismcar)
 ```
 
-b.  Un mécanisme **MAR** $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désignale la fonction de répartition d'une loi Normale $\mathcal{N}(0,1)$.
+### b.  Un mécanisme **MAR** $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désignale la fonction de répartition d'une loi Normale $\mathcal{N}(0,1)$.
 
 ```{r}
 set.seed(123)
@@ -621,7 +621,7 @@ don.ismar
 summary(don.ismar)
 ```
 
-c.  Un mécanisme **MNAR** $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$.
+### c.  Un mécanisme **MNAR** $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$.
 
 ```{r}
 set.seed(123)
@@ -639,4 +639,4 @@ don.ismnar
 summary(don.ismnar)
 ```
 
-II. " Analyser les avec les outils de description évoqués précédemment"
+## II. " Analyser les avec les outils de description évoqués précédemment"

@@ -5,10 +5,10 @@ date: "02/03/2022"
 header-includes:
   - \DeclareUnicodeCharacter{0301}{/}
 output:
+  pdf_document: default
+  html_notebook: default
   html_document:
     df_print: paged
-  html_notebook: default
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -41,6 +41,11 @@ tout en haut sinon ca voulait pas sortir un pdf.
 mites <- read.csv("/Users/romane/Université/Master 2 IS/S4/Étude de cas/data/mites.csv")
 str(mites)
 ```
+\newpage
+## Introduction
+
+Présenter les données, expliquer la démarche
+
 pour LM : chercher à valider les hypothèses, ca marche pas, faire des transformations (Box Cox), réessayer de valider les hyp
 Si ca marche on dit quon pourrait sarreter la mais on cherche a aller plus loin
 Si ca marche PAS on cherche un autre modele : GLM
@@ -49,13 +54,26 @@ Si ca marche PAS on cherche un autre modele : GLM
 \newpage
 ## 1. LM Gaussien
 
-Tester les hypothèses 
+Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire gaussien pour chaque variable réponse que l'on cherche à expliquer : `Galumna`, `prop`, `pa`. Mais afin de constuire un tel modèle, nous émettons plusieurs hypothèses. Le premier travail consiste donc à regarder si ces hypothèses sont vérifiées. Rappelons les hypothèses du modèle linéaire gaussien :
 
-# H. 1  Linéarité du modèle
+  - sur la forme du modèle :  
+    (H1) **linéarité** du modèle  
+  - sur les erreurs $\epsilon_i$ qui sont :  
+    (H2) **centrées** : $\mathbb{E}(\epsilon_i)=0, \forall i=1,..n$  
+    (H3) **homoscédastiques** : $\mathbb{V}(\epsilon_i)=\sigma^2, \forall i$  
+    (H4) **non-autocorrélées** : $cor(\epsilon_i, \epsilon_{i}^{'})=0, \forall i\neq i'$  
+    (H5) **normales** : $\epsilon_i \sim N(0, \sigma^2)$  
+  - sur les variables explicatives $X_1,...,X_p$ qui sont :
+    (H6) **non aléatoires** : la théorie se généralise facilement pour les variables aléatoires  
+    (H7) **non multicolinéaires** : les variables $X_1,...,X_p$ sont linéairement indépendantes, ce qui garantit l'unicité de l'estimateur MCO.  
+    
+Pour chaque modèle expliquant `Galumna`, `prop` et `pa`, nous regarderons si toutes ces hypothèses sont vérifiées, sauf la **6** qui est toujours vérifiée.
 
-Représentation graphique : 
+### (H3)  Linéarité du modèle
 
-1/ Galumna
+Nous allons observer la linéarité du modèle dans un premier temps par représentation graphique. Nous représenterons chaque variable à expliquer en fonction des variables `WatrCont` et `SubsDens` qui sont les deux seules variables quantitatives explicatives.
+
+**Variable réponse Galumna**  
 ```{r}
 par(mfrow=c(1,2))
 lm.g.subsdens<-lm(Galumna~SubsDens, data=mites)
@@ -104,7 +122,6 @@ lm.tot.g<-lm(Galumna~.-pa-prop-totalabund, data=mites)
 lm.tot.pa<-lm(pa~.-Galumna-prop-totalabund, data=mites)
 lm.tot.prop<-lm(prop~.-pa-Galumna-totalabund, data=mites)
 ```
-Transformation de Box et Cox :
 
 Rédiger pour chaque plot : DIAPO 20 (+linéarité)
 
@@ -377,7 +394,7 @@ prop.reg.2 <- glm(prop~WatrCont + SubsDens, data=mites, family = "binomial", wei
 summary(prop.reg.2)
 ```
 
-Cette fois-ci on voit que toutes les variables, ainsi que la constante sont significatives pour le test de Wald. L'AIC est très proche de celui du modèle complet : environ 158.
+Cette fois-ci on voit que toutes les variables, ainsi que la constante sont significatives pour le test de Wald. Pour rappel, ce test permet de tester la nullité d'un coefficient : $H_0 : \beta_j=0$.  
 
 **Recherche automatique :**
 
@@ -388,7 +405,7 @@ prop.reg.back$formula
 ```
 Avec une procédure de sélection backward, on garde 3 variables : `WatrCont`, `SubsDens` et `Topo`. 
 
-On va maintenant comparer ces trois modèles avec le BIC :
+Pour cette étude, on se place dans un cadre plus explicatif que prédictif. On décide donc de comparer ces trois modèles avec le BIC :
 
 ```{r}
 BIC(prop.reg.tot)
@@ -402,29 +419,31 @@ anova(prop.reg.2, prop.reg.back,test="Chisq")
 ```
 La p-value est inférieure à 0.05 donc la variable `Topo` est significative.
 
-Le meilleur modèle  s'écrit donc :
-
-et voici son summary :
 
 ```{r}
-summary(prop.reg.back)
+prop.reg.best <- prop.reg.back
+summary(prop.reg.best)
 ```
-On remarque que toutes les variables sont significatives d'après le test de Wald.
+On remarque que toutes les variables sont significatives d'après le test de Wald. 
 
 ### Interprétation des coefficients 
 
 On peut interpréter les coefficients du modèle pour nos trois variables grâce à leurs odds-ratios. L'odd-ratio pour la variable $j$ est égal à $\exp(\beta_j)$.
 
 ```{r}
-round(exp(prop.reg.back$coefficients),2)
+round(exp(prop.reg.best$coefficients),2)
 ```
 L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa p-value associée au test de Wald est inférieure à 5% donc on peut dire que la proportion de mites est significativement moins élevée si la quantité d'eau dans le sol augmente.
 L'odd-ratio de `SubsDens` est quant à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%. Cela signifie que la proportion de mites sera significativement plus importante si la densité du substrat augmente.  
 Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à 5%. Donc on peut conclure que si la topographie est de type Hummock, la proportion de mites sera significativement plus élevée.  
 
-### Diagnostics
+### Validation du modèle
+
+Enfin, nous devons maintenant si notre modèle est "bon". Rappelons une nouvelles fois que l'on se place dans un cadre explicatif, donc nous ne nous intéresserons pas à la qualité prédictive du modèle mais plutôt à sa qualité d'ajustement globale. 
 
 **Effet levier :**
+
+On regarde dans un premier temps les points leviers. Ce sont les points qui influencent fortement leur estimation.
 
 ```{r}
 p<-length(prop.reg.back$coefficients)
@@ -432,20 +451,20 @@ n<-nrow(mites)
 plot(influence(prop.reg.back)$hat, type="h", ylab="h_ii")
 abline(h=c(2*p/n, 3*p/n), col=2)
 ```
-On observe que 5 observations peuvent être déclarées comme "points leviers", c'est-à-dire qu'ils déterminent fortement leur propre estimation.
+On observe que 5 observations peuvent être déclarées comme "points leviers".
 
 **Points influents :**
 
-Les points influents sont des points qui influent sur le modèle de telle sorte que si on les enlèves, l'estimation des coefficients sera fortement changée. Pour les observer, on représente leur distance de Cook.
+Les points influents sont des points qui influent sur le modèle de telle sorte que si on les enlève, l'estimation des coefficients sera fortement changée. Pour les observer, on représente leur distance de Cook.
 
 ```{r}
 plot(cooks.distance(prop.reg.back), type="h", ylab="Distance de Cook")
 ```
-On relève plusieurs points influents. Notamment la 8ème observation, qui était déjà un point levier. 
+On relève plusieurs points influents. Notamment la 8ème observation, qui était déjà un point levier. Généralement, si un point est influent, il est soit levier, soit aberrant, soit les deux.
 
 **Analyse des résidus :**
 
-Enfin, nous allons analyser les résidus. On effectue pour cela un test de Pearson. L'hypothèse nulle de ce test est : $H_0 :=$ le modèle ajuste correctement les données.  
+Finalement, nous allons analyser les résidus. On effectue pour cela un *test de Pearson* ou *test global de la qualité de l'ajustement* basé sur les résidus de Pearson. L'hypothèse nulle de ce test est : $H_0 :=$ le modèle ajuste correctement les données.  
 
 ```{r}
 res <- sum(residuals(prop.reg.back, type = "pearson")^2)
@@ -453,22 +472,15 @@ ddl <- n-(p+1)
 pvalue <- 1 - pchisq(res,ddl)
 pchisq(res,ddl)
 ```
-PROBLÈMEEEEEEEEEEEE
+La p-value est très grande. On accepte donc $H_0$ et on conclut que le modèle ajuste correctement les données.
 
+On finit par représenter les résidus.
 ```{r}
 res<-residuals(prop.reg.back, type="pearson", )
 plot(res, ylim=c(-3,5), ylab="Residuals")
 abline(h=c(-2,2), col=2)
 ```
-```{r}
-plot(predict(prop.reg.back, type="r"), res, xlab="Fitted values", ylab="Residuals", ylim=c(-3,8))
-abline(h=c(-2,2), col=2)
-```
-CONCLURE !
-
-Pouvoir prédictif :
-
-???
+On voit que les résidus sont répartis de façon homogènes autour de l'axe des abscisses. Ils sont pour la plupart proches de 0. Cependant, trois points semblent avoir une valeur de résidu élevée. Peut-être correspondent-ils à des points leviers ou aberrants observés précédemment. Nous pourrions les enlver du jeu de données afin de construire un modèle qui ajusterait encore mieux les données mais nous décidons de les garder car le jeu de données ne contient pas beaucoup d'individus (70) et nous ne voulons pas le réduire davantage.
 
 
 \newpage
@@ -503,10 +515,10 @@ Nous allons maintenant interpreter les coefficients de notre modèle. Nous allon
 - Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur  $e^0.023=1.023267$. On en conclut que la densité n'influe pas sur l'abondance de Galumna. 
 
 Nous allons maintenant tester si nous avons de la surdispersion dans notre modèle. Par définition, nous avons que quand la déviance résiduelle est supérieur au nombre de degrés résiduels, le modèle est surdispersé.
-On peut estimer un paramètre de surdispersion $$\phi = \fract_{Degrès de liberté résiduels}^{Déviance résiduelle}$$.
-Nous avons donc $\frac_{101.49}^{67}=1.514776$. 
+On peut estimer un paramètre de surdispersion $$\phi = \frac{Degré de liberté résiduels}{Déviance résiduelle}$$.
+Nous avons donc $\frac{101.49}{67}=1.514776$. 
 Sous l'hypothèse nulle de non surdispersion ($\phi=1$), la deviance D suit une loi du $\chi^2$ à $(n-p)=70-3=67$ degrès de liberté. 
-Rappelons que nous rejetons $H_0$ si $D>\chi^2_{67,0.95}$ avec d'après la table de la loi du khi-deux, $chi^2_{67,0.95}=87,11$. Dans notre `summary` de notre modèle nous avons que $D=101.49$ pour 67 degrès de liberté. Nous rejetons donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos données. Nous savons que la non-indépendance des observations individuelles peut causer une surdispersion des données par rapport aux suppositions de la distribution de Poisson. 
+Rappelons que nous rejetons $H_0$ si $D>\chi^2_{67,0.95}$ avec d'après la table de la loi du khi-deux, $\chi^2_{67,0.95}=87,11$. Dans notre `summary` de notre modèle nous avons que $D=101.49$ pour 67 degrès de liberté. Nous rejetons donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos données. Nous savons que la non-indépendance des observations individuelles peut causer une surdispersion des données par rapport aux suppositions de la distribution de Poisson. 
 
 Pour determiner si le $\chi^2$ diffère significativement de la valeur attendue selon la distribution de Poisson, nous pouvons calculer la probabilité d'avoir obtenu un $\chi^2$ plus élevé si le modèle est correct.
 ```{r}
@@ -519,7 +531,7 @@ disp
 ```
 L'estimé du paramètre de dispersion est de $\hat{c}=2.1$. Cependant, l'estimation de ce paramètre de dispersion n'est pas trop élevé. Les estimés des coefficients de la régression de Poisson demeurent valides, mais il faut multiplier leurs erreurs-types par $\sqrt{\hat{c}}$. Autrement dit, la surdispersion n'introduit pas de biais, mais augmente l'incertitude sur les valeurs des coefficients. 
 
-Pour corriger les erreurs-types, nous allons ajouter un argument `disperson` dans la fonction `summary`. Ce qui revient à utiliser la famille `quasipoisson` dans notre modèle.
+Pour corriger les erreurs-types, nous allons ajouter un argument `dispersion` dans la fonction `summary`. Ce qui revient à utiliser la famille `quasipoisson` dans notre modèle.
 ```{r}
 summary(glm.poi, dispersion = disp)
 glm.poi2 <- glm(Galumna~WatrCont+SubsDens , family = quasipoisson, data = mites )

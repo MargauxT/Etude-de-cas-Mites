@@ -9,6 +9,9 @@ output:
   html_notebook: default
   html_document:
     df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -31,8 +34,8 @@ library(knitr)
 ```
 \newpage
 
-Note à nous meme à dégager plus tard : j'ai rajouté le declareunicodecharacter 
-tout en haut sinon ca voulait pas sortir un pdf.
+Note à nous meme à dégager plus tard : j'ai rajouté le
+declareunicodecharacter tout en haut sinon ca voulait pas sortir un pdf.
 
 # Modèle linéaire généralisé (GLM) avec R
 
@@ -43,39 +46,59 @@ tout en haut sinon ca voulait pas sortir un pdf.
 #mites <- read.csv("/Users/romane/Université/Master 2 IS/S4/Étude de cas/data/mites.csv")
 #str(mites)
 ```
+
 \newpage
+
 ## Introduction
 
 Présenter les données, expliquer la démarche
 
-pour LM : chercher à valider les hypothèses, ca marche pas, faire des transformations (Box Cox), réessayer de valider les hyp
-Si ca marche on dit quon pourrait sarreter la mais on cherche a aller plus loin
-Si ca marche PAS on cherche un autre modele : GLM
-(si abundance marche, possibilité de faire +1 pour éviter les valeurs=0)
+pour LM : chercher à valider les hypothèses, ca marche pas, faire des
+transformations (Box Cox), réessayer de valider les hyp Si ca marche on
+dit quon pourrait sarreter la mais on cherche a aller plus loin Si ca
+marche PAS on cherche un autre modele : GLM (si abundance marche,
+possibilité de faire +1 pour éviter les valeurs=0)
 
 \newpage
+
 ## 1. LM Gaussien
 
-Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire gaussien pour chaque variable réponse que l'on cherche à expliquer : `Galumna`, `prop`, `pa`. Mais afin de constuire un tel modèle, nous émettons plusieurs hypothèses. Le premier travail consiste donc à regarder si ces hypothèses sont vérifiées. Rappelons les hypothèses du modèle linéaire gaussien :
+Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire
+gaussien pour chaque variable réponse que l'on cherche à expliquer :
+`Galumna`, `prop`, `pa`. Mais afin de constuire un tel modèle, nous
+émettons plusieurs hypothèses. Le premier travail consiste donc à
+regarder si ces hypothèses sont vérifiées. Rappelons les hypothèses du
+modèle linéaire gaussien :
 
-  - sur la forme du modèle :  
-    (H1) **linéarité** du modèle  
-  - sur les erreurs $\epsilon_i$ qui sont :  
-    (H2) **centrées** : $\mathbb{E}(\epsilon_i)=0, \forall i=1,..n$  
-    (H3) **homoscédastiques** : $\mathbb{V}(\epsilon_i)=\sigma^2, \forall i$  
-    (H4) **non-autocorrélées** : $cor(\epsilon_i, \epsilon_{i}^{'})=0, \forall i\neq i'$  
-    (H5) **normales** : $\epsilon_i \sim N(0, \sigma^2)$  
-  - sur les variables explicatives $X_1,...,X_p$ qui sont :
-    (H6) **non aléatoires** : la théorie se généralise facilement pour les variables aléatoires  
-    (H7) **non multicolinéaires** : les variables $X_1,...,X_p$ sont linéairement indépendantes, ce qui garantit l'unicité de l'estimateur MCO.  
-    
-Pour chaque modèle expliquant `Galumna`, `prop` et `pa`, nous regarderons si toutes ces hypothèses sont vérifiées, sauf la **6** qui est toujours vérifiée.
+-   sur la forme du modèle :\
+    (H1) **linéarité** du modèle\
+-   sur les erreurs $\epsilon_i$ qui sont :\
+    (H2) **centrées** : $\mathbb{E}(\epsilon_i)=0, \forall i=1,..n$\
+    (H3) **homoscédastiques** :
+    $\mathbb{V}(\epsilon_i)=\sigma^2, \forall i$\
+    (H4) **non-autocorrélées** :
+    $cor(\epsilon_i, \epsilon_{i}^{'})=0, \forall i\neq i'$\
+    (H5) **normales** : $\epsilon_i \sim N(0, \sigma^2)$\
+-   sur les variables explicatives $X_1,...,X_p$ qui sont : (H6) **non
+    aléatoires** : la théorie se généralise facilement pour les
+    variables aléatoires\
+    (H7) **non multicolinéaires** : les variables $X_1,...,X_p$ sont
+    linéairement indépendantes, ce qui garantit l'unicité de
+    l'estimateur MCO.
 
-### (H3)  Linéarité du modèle
+Pour chaque modèle expliquant `Galumna`, `prop` et `pa`, nous
+regarderons si toutes ces hypothèses sont vérifiées, sauf la **6** qui
+est toujours vérifiée.
 
-Nous allons observer la linéarité du modèle dans un premier temps par représentation graphique. Nous représenterons chaque variable à expliquer en fonction des variables `WatrCont` et `SubsDens` qui sont les deux seules variables quantitatives explicatives.
+### (H3) Linéarité du modèle
 
-**Variable réponse Galumna**  
+Nous allons observer la linéarité du modèle dans un premier temps par
+représentation graphique. Nous représenterons chaque variable à
+expliquer en fonction des variables `WatrCont` et `SubsDens` qui sont
+les deux seules variables quantitatives explicatives.
+
+**Variable réponse Galumna**
+
 ```{r}
 par(mfrow=c(1,2))
 lm.g.subsdens<-lm(Galumna~SubsDens, data=mites)
@@ -85,7 +108,9 @@ lm.g.watrcont<-lm(Galumna~WatrCont, data=mites)
 plot(mites$WatrCont, mites$Galumna)
 abline(lm.g.watrcont, col=2)
 ```
+
 2/ pa
+
 ```{r}
 par(mfrow=c(1,2))
 lm.pa.subsdens<-lm(pa~SubsDens, data=mites)
@@ -95,7 +120,9 @@ lm.pa.watrcont<-lm(pa~WatrCont, data=mites)
 plot(mites$WatrCont, mites$pa)
 abline(lm.pa.watrcont, col=2)
 ```
+
 3/ prop
+
 ```{r}
 par(mfrow=c(1,2))
 lm.prop.subsdens<-lm(prop~SubsDens, data=mites)
@@ -117,8 +144,8 @@ lm.prop2<-lm(prop~WatrCont+SubsDens, data=mites)
 harvtest(lm.prop2, data=mites)
 ```
 
+# H2
 
-# H2 
 ```{r}
 lm.tot.g<-lm(Galumna~.-pa-prop-totalabund, data=mites)
 lm.tot.pa<-lm(pa~.-Galumna-prop-totalabund, data=mites)
@@ -127,65 +154,76 @@ lm.tot.prop<-lm(prop~.-pa-Galumna-totalabund, data=mites)
 
 Rédiger pour chaque plot : DIAPO 20 (+linéarité)
 
-- Residuals VS Fitted : 
+-   Residuals VS Fitted :
 
-- Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du model sont distribués suivant une loi normale (les points doivent suivre la ligne pour repondre à cette hypothese) (H5)
+-   Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du
+    model sont distribués suivant une loi normale (les points doivent
+    suivre la ligne pour repondre à cette hypothese) (H5)
 
-- Residuals VS Leverage (H) : Verifier si ya des points 
+-   Residuals VS Leverage (H) : Verifier si ya des points
 
-(H2) : diapo 27 -> toujours vérifié pour MCO
+(H2) : diapo 27 -\> toujours vérifié pour MCO
 
-(H3) : Homoscédasticité : 
--> Plot des résidus : "Scale-Location" (essayer de mettre que ce plot)
+(H3) : Homoscédasticité : -\> Plot des résidus : "Scale-Location"
+(essayer de mettre que ce plot)
+
 ```{r}
 plot(lm.tot.g, which = 3)
 plot(lm.tot.pa, which = 3)
 plot(lm.tot.prop, which = 3)
 ```
-Ce plot est utilisé pour checker l'homocédasticité, la ligne doit etre horizontale parce que la variance est constante 
 
--> Test de Breush-Pagan 
-Hyp : H0 : Le bruit est homocedastique 
-On retrouve le modele lineaire classique (dont le bruit est homocedastique, $\sigma_i^2=\sigma^2$ pour tout $i$)
+Ce plot est utilisé pour checker l'homocédasticité, la ligne doit etre
+horizontale parce que la variance est constante
+
+-\> Test de Breush-Pagan Hyp : H0 : Le bruit est homocedastique On
+retrouve le modele lineaire classique (dont le bruit est homocedastique,
+$\sigma_i^2=\sigma^2$ pour tout $i$)
 
 ```{r}
 bptest(lm.tot.g)
 bptest(lm.tot.pa)
 bptest(lm.tot.prop)
 ```
+
 Petites p values donc pas homocedastique
 
-(H4) : Non autocorrélation des erreurs 
--> test de Durbin-Watson : 
-H0 : Les résidus sont non correles 
+(H4) : Non autocorrélation des erreurs -\> test de Durbin-Watson : H0 :
+Les résidus sont non correles
+
 ```{r}
 dwtest(lm.tot.g)
 dwtest(lm.tot.pa)
 dwtest(lm.tot.prop)
 ```
+
 On rejete pour pa et prop
 
-(H5) : Normalité des erreurs 
+(H5) : Normalité des erreurs
+
 ```{r}
 plot(lm.tot.g, which = 2)
 plot(lm.tot.pa, which = 2)
 plot(lm.tot.prop, which = 2)
 ```
-- Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du model sont distribués suivant une loi normale (les points doivent suivre la ligne pour repondre à cette hypothese) (H5)
+
+-   Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du
+    model sont distribués suivant une loi normale (les points doivent
+    suivre la ligne pour repondre à cette hypothese) (H5)
 
 Si la rpz est (a peu pres) une droite, l'hyp de normalité est accepté
 
--> Test de Shapiro-Wilks :
-H0 : normalité 
+-\> Test de Shapiro-Wilks : H0 : normalité
+
 ```{r}
 shapiro.test(lm.tot.g$residuals)
 shapiro.test(lm.tot.pa$residuals)
 shapiro.test(lm.tot.prop$residuals)
 ```
+
 Rejete H0 pour les trois
 
-(H7) : Non multicolinéarité des variables explicatives 
-
+(H7) : Non multicolinéarité des variables explicatives
 
 ```{r}
 plot(mites$SubsDens, mites$WatrCont)
@@ -193,74 +231,82 @@ boxplot(mites$SubsDens~as.factor(mites$Substrate))
 
 barplot(table(mites$Substrate, mites$Topo), legend.text=T)
 ```
-Faible tendance linéaire présente 
-Faire boxplot pour quanti-quali
-barplot : On observe que les 
 
+Faible tendance linéaire présente Faire boxplot pour quanti-quali
+barplot : On observe que les
 
 ```{r}
 vif(lm.tot.g)
 vif(lm.tot.pa)
 vif(lm.tot.prop)
 ```
-Toujours superieur a 1, >5 trop eleve donc pb de multicolineralité 
 
-CONCLUSION DU I) : 
-Hypotheses du LM pas veirifées donc on ne peux pas prendre un modele linéaire 
+Toujours superieur a 1, \>5 trop eleve donc pb de multicolineralité
+
+CONCLUSION DU I) : Hypotheses du LM pas veirifées donc on ne peux pas
+prendre un modele linéaire
 
 Transformation Logit :
+
 ```{r}
 logitTransform <- function(p) { log(p/(1-p)) }
 prop.logit <- logitTransform(mites$prop)
 plot(mites$prop, prop.logit)
 #lm.prop.logit <- lm(prop.logit~.-pa-prop-totalabund-Galumna, data =mites)
 ```
-Probleme car Lise ne test pas ses enoncés avant de nous les donner -> demander à Juju
-0 dans prop, donc probleme avec le logit car logit(0) non defini
 
-Tranformation arcsin : 
+Probleme car Lise ne test pas ses enoncés avant de nous les donner -\>
+demander à Juju 0 dans prop, donc probleme avec le logit car logit(0)
+non defini
+
+Tranformation arcsin :
+
 ```{r}
 asinTransform <- function(p) { asin(sqrt(p)) }
 prop.asin <- asinTransform(mites$prop)
 plot(mites$prop, prop.asin)
 lm.prop.asin <- lm(prop.asin~.-pa-prop-totalabund-Galumna, data =mites)
 ```
--> Re vérifier toutes les hypotheses comme dans le I)
 
-(H3) : Homoscédasticité : 
--> Plot des résidus : "Scale-Location" 
+-\> Re vérifier toutes les hypotheses comme dans le I)
+
+(H3) : Homoscédasticité : -\> Plot des résidus : "Scale-Location"
+
 ```{r}
 plot(lm.prop.asin, which =3)
 bptest(lm.prop.asin)
 ```
 
-Pas tres concluant pour amélirorer les problemes de variance, car deja bien avant la transformation.
+Pas tres concluant pour amélirorer les problemes de variance, car deja
+bien avant la transformation.
 
 Transformation de Box-Cox :
+
 ```{r}
 boxcox 
 ```
 
-
 \newpage
+
 ## 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa) :
 
-Objectif : déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
-
-
+Objectif : déterminer le meilleur modèle, interpréter les coefficients,
+puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
 
 --- Recherche du meilleur modèle ---
 
-  - Méthode 'à la main'
+-   Méthode 'à la main'
 
-Pour débuter, on construit le modèle général (avec toutes les variables explicatives) pour déterminer lesquelles sont significatives:
+Pour débuter, on construit le modèle général (avec toutes les variables
+explicatives) pour déterminer lesquelles sont significatives:
 
 ```{r}
 glm.tot.pa <- glm(pa~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial")
 summary(glm.tot.pa)
 ```
 
-Daprès cette sortie, les variables significatives semblent être WatrCont, SubsDens et Topo. 
+Daprès cette sortie, les variables significatives semblent être
+WatrCont, SubsDens et Topo.
 
 On peut alors tester un modèle uniquement avec celles-ci :
 
@@ -268,25 +314,35 @@ On peut alors tester un modèle uniquement avec celles-ci :
 glm.best.pa <- glm(pa~WatrCont + SubsDens + Topo, data=mites, family = "binomial")
 summary(glm.best.pa)
 ```
-Ce modèle semble mieux car les variables sont toutes vraiment significatives.
 
-Afin de s'assurer de la significativité du retrait des autres variables, nous pouvons réaliser un test de déviance :
+Ce modèle semble mieux car les variables sont toutes vraiment
+significatives.
+
+Afin de s'assurer de la significativité du retrait des autres variables,
+nous pouvons réaliser un test de déviance :
 
 ```{r}
 anova(glm.best.pa, glm.tot.pa, test = 'Chisq')
 ```
-La grande p-value nous indique que les variables présentent dans le plus grand modèle mais pas dans les plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critères BIC pour chacuns des euc modèles : 
+
+La grande p-value nous indique que les variables présentent dans le plus
+grand modèle mais pas dans les plus petit ne sont pas significatives.
+Avant de confirmer le choix de ce modèle, regardons les valeurs du
+critères BIC pour chacuns des euc modèles :
 
 ```{r}
 BIC(glm.tot.pa)
 BIC(glm.best.pa)
 ```
 
-En accord avec les résultats précédents, le critère BIC est inférieur pour le deuxième modèle. Cela confirme notre choix de garder uniquement les variables WatrCont, SubsDens et Topo dans notre modèle.
+En accord avec les résultats précédents, le critère BIC est inférieur
+pour le deuxième modèle. Cela confirme notre choix de garder uniquement
+les variables WatrCont, SubsDens et Topo dans notre modèle.
 
-Nous pouvons comparer ce modèle obtenu avec celui déterminé par une sélection automatique.
+Nous pouvons comparer ce modèle obtenu avec celui déterminé par une
+sélection automatique.
 
-  - Méthode de sélection stepwise descendante avec le critère BIC
+-   Méthode de sélection stepwise descendante avec le critère BIC
 
 ```{r}
 n <- nrow(mites)
@@ -294,30 +350,39 @@ glm.tot.pa.step <- step(glm.tot.pa, direction = "backward", k = log(n))
 glm.tot.pa.step$formula
 ```
 
-La sélection automatique de modèle retient également le modèle contenant les variables WatrCont, SubsDens et Topo car c'est celui pour lequel le BIC est le plus faible.
+La sélection automatique de modèle retient également le modèle contenant
+les variables WatrCont, SubsDens et Topo car c'est celui pour lequel le
+BIC est le plus faible.
 
 Par conséquent, nous retenons le modèle suivant pour la suite :
 
 $$\hat{Pa}= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock$$
 
-
-
 --- Interprétation des coefficients ---
 
-La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio.
+La sortie de notre modèle indique que le contenu en eau, la densité du
+substrat et la topographie sont associés significativement à
+l'occurrence de mites. Cependant, on peut également interpréter les
+coefficients de la pente grâce aux odds-ratio.
 
 ```{r}
 exp(glm.best.pa$coefficients)
 ```
 
-Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (WatrCont), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis ce que pour une unité de densité du substrat (SubsDens) en plus, le risque est plus élevé de $18$%. Enfin, lorsque de la topographie est de type Hummock, il y a énroméménet de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
-
-
-
+Grâce à ces coefficients, nous pouvons déterminer le pourcentage de
+probabilité de la présence de mites, lorsque que l'on augmente l'une des
+variables. En effet, pour chaque augmentation d'une unité du contenu en
+eau (WatrCont), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins
+d'avoir une présence de mites, tandis ce que pour une unité de densité
+du substrat (SubsDens) en plus, le risque est plus élevé de $18$%.
+Enfin, lorsque de la topographie est de type Hummock, il y a énroméménet
+de probabilité d'avoir des mites, pusique celle-ci augmente de plus de
+$1400$%.
 
 --- Evaluation de l'ajustement du modèle ---
 
-Pour tester la qualité de l'ajustement de notre modèle, on peut utiliser le test de Pearson basé sur les résidus de Pearson.
+Pour tester la qualité de l'ajustement de notre modèle, on peut utiliser
+le test de Pearson basé sur les résidus de Pearson.
 
 ```{r}
 res <- sum(residuals(glm.best.pa, type = "pearson")^2)
@@ -326,24 +391,31 @@ pvalue = 1 - pchisq(res,ddl)
 pvalue
 ```
 
-La p-value était très grande, on admet que le modèle est très bien adapté aux données.
+La p-value était très grande, on admet que le modèle est très bien
+adapté aux données.
 
-On peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la pertinence du modèle :
+On peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la
+pertinence du modèle :
 
 ```{r}
 hoslem.test(mites$pa, fitted(glm.best.pa))
 ```
 
-De même, la très grande p-value nous indique que le modèle est bien adapté aux données.
+De même, la très grande p-value nous indique que le modèle est bien
+adapté aux données.
 
-Avant de valider définitivement le choix de ce modèle, il faut évaluer son pouvoir prédictif.
-
-
+Avant de valider définitivement le choix de ce modèle, il faut évaluer
+son pouvoir prédictif.
 
 --- Evaluation de son pouvoir prédictif ---
 
-Pour évaluer le pouvoir prédictif de notre modèle, nous allons juger ses prédictions grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction du modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci.
-Nous obtenons alors les prédictions de pa pour tous les individus et nous pouvons tracer la courbe ROC.
+Pour évaluer le pouvoir prédictif de notre modèle, nous allons juger ses
+prédictions grâce à une courbe ROC. Afin de ne pas prédire sur des
+individus ayant servis à la construction du modèle, nous effectuons une
+validation croisée. En effet, pour chaque individu i, nous estimons le
+modèle sans cet individu puis nous prédisons la valeur de pa pour
+celui-ci. Nous obtenons alors les prédictions de pa pour tous les
+individus et nous pouvons tracer la courbe ROC.
 
 ```{r}
 pred=1:n
@@ -359,45 +431,71 @@ roc=performance(pr, measure="tpr",x.measure="fpr")
 plot(roc)
 ```
 
-Cette courbe résume le taux de vrais positifs en fonction du taux de faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la diagonale. Ici, nous avons une courbe largement au dessus de la diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe (AUC) :
+Cette courbe résume le taux de vrais positifs en fonction du taux de
+faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la
+diagonale. Ici, nous avons une courbe largement au dessus de la
+diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe
+(AUC) :
 
 ```{r}
 perf <- performance(pr, "auc")
 perf@y.values[[1]]
 ```
 
-L'aire sous la courbe est proche de 1 : le pouvoir prédictif de notre modèle est alors très bon.
+L'aire sous la courbe est proche de 1 : le pouvoir prédictif de notre
+modèle est alors très bon.
 
-Enfin, nous pouvons résumer les bonnes et mauvaises prédictions de notre modèle grâce à une matrice de confusion. Pour cela, il est intéressant de déterminer en amont le seuil à partir duquel on admet la présence de mites. On trace alors la courbe du taux d'erreur en fonction des différents seuils.
+Enfin, nous pouvons résumer les bonnes et mauvaises prédictions de notre
+modèle grâce à une matrice de confusion. Pour cela, il est intéressant
+de déterminer en amont le seuil à partir duquel on admet la présence de
+mites. On trace alors la courbe du taux d'erreur en fonction des
+différents seuils.
 
 ```{r}
 res.err=performance(pr,measure = "err")
 plot(res.err)
 ```
 
-Nous remarquons que le taux d'erreur le plus faible est pour un seuil de 0.5. C'est alors le seuil que nous allons choisir pour étblir notre matrice de confusion.
+Nous remarquons que le taux d'erreur le plus faible est pour un seuil de
+0.5. C'est alors le seuil que nous allons choisir pour étblir notre
+matrice de confusion.
 
 ```{r}
 table(pred>0.5, mites$pa)
 ```
 
-D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. Par conséquent, le taux d'erreur est de $\frac{7}{70}=0.1$. On peut en conclure que ce modèle a de bonnes qualités prédictives.
+D'après cette matrice, nous avons prédit quarante fois l'abscence de
+mites et vingt-trois fois leur présence en ayant raison. Cependant, le
+modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de
+mites à tort et deux fois leur présence à tort. Par conséquent, le taux
+d'erreur est de $\frac{7}{70}=0.1$. On peut en conclure que ce modèle a
+de bonnes qualités prédictives.
 
-Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient des bons résultats, tant sur son ajustement que sur son pouvoir prédictif.
-
-
-
+Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites
+grâce au contenu en eau, à la densité du substrat et à la topographie
+obtient des bons résultats, tant sur son ajustement que sur son pouvoir
+prédictif.
 
 \newpage
+
 ## 3. GLM Régression Logistique sur les données agrégées
 
-Objectif : expliquer la fréquence relative `prop`, déterminer le meilleur modèle pour cette variable réponse, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif. 
+Objectif : expliquer la fréquence relative `prop`, déterminer le
+meilleur modèle pour cette variable réponse, interpréter les
+coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir
+prédictif.
 
 ### Recherche du meilleur modèle
 
-La variable `prop` est, comme son nom l'indique, une variable en proportion. Malgré qu'il ne s'agisse pas d'une variable binaire, ce cas est proche d'une régression logistique. Sous R, on peut utiliser la fonction `glm` de manière semblable à lorsque l'on fait une régression logistique classique, mais en précisant cette fois des poids a priori.  
+La variable `prop` est, comme son nom l'indique, une variable en
+proportion. Malgré qu'il ne s'agisse pas d'une variable binaire, ce cas
+est proche d'une régression logistique. Sous R, on peut utiliser la
+fonction `glm` de manière semblable à lorsque l'on fait une régression
+logistique classique, mais en précisant cette fois des poids a priori.
 
-On suivra la même méthode que dans la partie précédente pour chercher le meilleur modèle : une recherche à la main dans un premier temps, puis une méthode de sélection automatique.  
+On suivra la même méthode que dans la partie précédente pour chercher le
+meilleur modèle : une recherche à la main dans un premier temps, puis
+une méthode de sélection automatique.
 
 **Recherche à la main :**
 
@@ -405,64 +503,99 @@ On suivra la même méthode que dans la partie précédente pour chercher le mei
 prop.reg.tot <- glm(prop~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial", weights = totalabund)
 summary(prop.reg.tot)
 ```
-Lorsque l'on effectue le modèle complet, on obtient un warning qui nous dit qu'une ou plusieurs observations du jeu de données sont prédites à 0 ou 1, ce qui ne veut pas forcément dire que la régression logistique est mauvaise. On décide donc d'ignorer le warning. Cependant, on voit qu'il n'y que très peu de variables significatives. On créé un modèle avec les deux variables les plus significatives du modèle complet : `WatrCont` et `SubsDens`.  
 
+Lorsque l'on effectue le modèle complet, on obtient un warning qui nous
+dit qu'une ou plusieurs observations du jeu de données sont prédites à 0
+ou 1, ce qui ne veut pas forcément dire que la régression logistique est
+mauvaise. On décide donc d'ignorer le warning. Cependant, on voit qu'il
+n'y que très peu de variables significatives. On créé un modèle avec les
+deux variables les plus significatives du modèle complet : `WatrCont` et
+`SubsDens`.
 
 ```{r}
 prop.reg.2 <- glm(prop~WatrCont + SubsDens, data=mites, family = "binomial", weights = totalabund)
 summary(prop.reg.2)
 ```
 
-Cette fois-ci on voit que toutes les variables, ainsi que la constante sont significatives pour le test de Wald. Pour rappel, ce test permet de tester la nullité d'un coefficient : $H_0 : \beta_j=0$.  
+Cette fois-ci on voit que toutes les variables, ainsi que la constante
+sont significatives pour le test de Wald. Pour rappel, ce test permet de
+tester la nullité d'un coefficient : $H_0 : \beta_j=0$.
 
 **Recherche automatique :**
 
-On effectue maintenant une recherche automatique du meilleur modèle en partant du plus gros modèle et en se basant sur le critère BIC, critère explicatif.
+On effectue maintenant une recherche automatique du meilleur modèle en
+partant du plus gros modèle et en se basant sur le critère BIC, critère
+explicatif.
+
 ```{r}
 prop.reg.back<-step(prop.reg.tot, direction="backward", k=log(nrow(mites)))
 prop.reg.back$formula
 ```
-Avec une procédure de sélection backward, on garde 3 variables : `WatrCont`, `SubsDens` et `Topo`. 
 
-Pour cette étude, on se place dans un cadre plus explicatif que prédictif. On décide donc de comparer ces trois modèles avec le BIC :
+Avec une procédure de sélection backward, on garde 3 variables :
+`WatrCont`, `SubsDens` et `Topo`.
+
+Pour cette étude, on se place dans un cadre plus explicatif que
+prédictif. On décide donc de comparer ces trois modèles avec le BIC :
 
 ```{r}
 BIC(prop.reg.tot)
 BIC(prop.reg.2)
 BIC(prop.reg.back)
 ```
-Le modèle à trois variables est celui qui minimise le BIC. On peut tout de même effectuer un test de modèle emboîtés afin de regarder si la troisième variable `Topo` est bien significative. On teste donc le modèle à 2 variables contre celui à 3 variables.
+
+Le modèle à trois variables est celui qui minimise le BIC. On peut tout
+de même effectuer un test de modèle emboîtés afin de regarder si la
+troisième variable `Topo` est bien significative. On teste donc le
+modèle à 2 variables contre celui à 3 variables.
 
 ```{r}
 anova(prop.reg.2, prop.reg.back,test="Chisq")
 ```
-La p-value est inférieure à 0.05 donc la variable `Topo` est significative.
 
+La p-value est inférieure à 0.05 donc la variable `Topo` est
+significative.
 
 ```{r}
 prop.reg.best <- prop.reg.back
 summary(prop.reg.best)
 ```
-On remarque que toutes les variables sont significatives d'après le test de Wald. 
 
-### Interprétation des coefficients 
+On remarque que toutes les variables sont significatives d'après le test
+de Wald.
 
-On peut interpréter les coefficients du modèle pour nos trois variables grâce à leurs odds-ratios. L'odd-ratio pour la variable $j$ est égal à $\exp(\beta_j)$.
+### Interprétation des coefficients
+
+On peut interpréter les coefficients du modèle pour nos trois variables
+grâce à leurs odds-ratios. L'odd-ratio pour la variable $j$ est égal à
+$\exp(\beta_j)$.
 
 ```{r}
 round(exp(prop.reg.best$coefficients),2)
 ```
-L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa p-value associée au test de Wald est inférieure à 5% donc on peut dire que la proportion de mites est significativement moins élevée si la quantité d'eau dans le sol augmente.
-L'odd-ratio de `SubsDens` est quant à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%. Cela signifie que la proportion de mites sera significativement plus importante si la densité du substrat augmente.  
-Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à 5%. Donc on peut conclure que si la topographie est de type Hummock, la proportion de mites sera significativement plus élevée.  
+
+L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa
+p-value associée au test de Wald est inférieure à 5% donc on peut dire
+que la proportion de mites est significativement moins élevée si la
+quantité d'eau dans le sol augmente. L'odd-ratio de `SubsDens` est quant
+à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%.
+Cela signifie que la proportion de mites sera significativement plus
+importante si la densité du substrat augmente.\
+Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à
+5%. Donc on peut conclure que si la topographie est de type Hummock, la
+proportion de mites sera significativement plus élevée.
 
 ### Validation du modèle
 
-Enfin, nous devons maintenant si notre modèle est "bon". Rappelons une nouvelles fois que l'on se place dans un cadre explicatif, donc nous ne nous intéresserons pas à la qualité prédictive du modèle mais plutôt à sa qualité d'ajustement globale. 
+Enfin, nous devons maintenant si notre modèle est "bon". Rappelons une
+nouvelles fois que l'on se place dans un cadre explicatif, donc nous ne
+nous intéresserons pas à la qualité prédictive du modèle mais plutôt à
+sa qualité d'ajustement globale.
 
 **Effet levier :**
 
-On regarde dans un premier temps les points leviers. Ce sont les points qui influencent fortement leur estimation.
+On regarde dans un premier temps les points leviers. Ce sont les points
+qui influencent fortement leur estimation.
 
 ```{r}
 p<-length(prop.reg.back$coefficients)
@@ -470,20 +603,30 @@ n<-nrow(mites)
 plot(influence(prop.reg.back)$hat, type="h", ylab="h_ii")
 abline(h=c(2*p/n, 3*p/n), col=2)
 ```
-On observe que 5 observations peuvent être déclarées comme "points leviers".
+
+On observe que 5 observations peuvent être déclarées comme "points
+leviers".
 
 **Points influents :**
 
-Les points influents sont des points qui influent sur le modèle de telle sorte que si on les enlève, l'estimation des coefficients sera fortement changée. Pour les observer, on représente leur distance de Cook.
+Les points influents sont des points qui influent sur le modèle de telle
+sorte que si on les enlève, l'estimation des coefficients sera fortement
+changée. Pour les observer, on représente leur distance de Cook.
 
 ```{r}
 plot(cooks.distance(prop.reg.back), type="h", ylab="Distance de Cook")
 ```
-On relève plusieurs points influents. Notamment la 8ème observation, qui était déjà un point levier. Généralement, si un point est influent, il est soit levier, soit aberrant, soit les deux.
+
+On relève plusieurs points influents. Notamment la 8ème observation, qui
+était déjà un point levier. Généralement, si un point est influent, il
+est soit levier, soit aberrant, soit les deux.
 
 **Analyse des résidus :**
 
-Finalement, nous allons analyser les résidus. On effectue pour cela un *test de Pearson* ou *test global de la qualité de l'ajustement* basé sur les résidus de Pearson. L'hypothèse nulle de ce test est : $H_0 :=$ le modèle ajuste correctement les données.  
+Finalement, nous allons analyser les résidus. On effectue pour cela un
+*test de Pearson* ou *test global de la qualité de l'ajustement* basé
+sur les résidus de Pearson. L'hypothèse nulle de ce test est : $H_0 :=$
+le modèle ajuste correctement les données.
 
 ```{r}
 res <- sum(residuals(prop.reg.back, type = "pearson")^2)
@@ -491,71 +634,135 @@ ddl <- n-(p+1)
 pvalue <- 1 - pchisq(res,ddl)
 pchisq(res,ddl)
 ```
-La p-value est très grande. On accepte donc $H_0$ et on conclut que le modèle ajuste correctement les données.
+
+La p-value est très grande. On accepte donc $H_0$ et on conclut que le
+modèle ajuste correctement les données.
 
 On finit par représenter les résidus.
+
 ```{r}
 res<-residuals(prop.reg.back, type="pearson", )
 plot(res, ylim=c(-3,5), ylab="Residuals")
 abline(h=c(-2,2), col=2)
 ```
-On voit que les résidus sont répartis de façon homogènes autour de l'axe des abscisses. Ils sont pour la plupart proches de 0. Cependant, trois points semblent avoir une valeur de résidu élevée. Peut-être correspondent-ils à des points leviers ou aberrants observés précédemment. Nous pourrions les enlver du jeu de données afin de construire un modèle qui ajusterait encore mieux les données mais nous décidons de les garder car le jeu de données ne contient pas beaucoup d'individus (70) et nous ne voulons pas le réduire davantage.
 
+On voit que les résidus sont répartis de façon homogènes autour de l'axe
+des abscisses. Ils sont pour la plupart proches de 0. Cependant, trois
+points semblent avoir une valeur de résidu élevée. Peut-être
+correspondent-ils à des points leviers ou aberrants observés
+précédemment. Nous pourrions les enlver du jeu de données afin de
+construire un modèle qui ajusterait encore mieux les données mais nous
+décidons de les garder car le jeu de données ne contient pas beaucoup
+d'individus (70) et nous ne voulons pas le réduire davantage.
 
 \newpage
+
 ## 4. GLM Régression Poisson sur Abondance (Galumna) :
 
-Objectif : Modéliser l'abondance de l'espèce Galumna en fonction des caractéristiques du substrat (son contenu en eau 'WartCont' et sa densité 'SubsDens') et si nécessaire des autres variables environmentales.
+Objectif : Modéliser l'abondance de l'espèce Galumna en fonction des
+caractéristiques du substrat (son contenu en eau 'WartCont' et sa
+densité 'SubsDens') et si nécessaire des autres variables
+environmentales.
 
-Rappelons que le modèle linéaire général est un cas particulier de GLM, on a : $Y = X\beta + e$ avec $e = (\epsilon_1, \dots, \epsilon_n)^T$ et $\epsilon_i$ sont i.i.d suivant $N(0,\theta^2)$.
+Rappelons que le modèle linéaire général est un cas particulier de GLM,
+on a : $Y = X\beta + e$ avec $e = (\epsilon_1, \dots, \epsilon_n)^T$ et
+$\epsilon_i$ sont i.i.d suivant $N(0,\theta^2)$.
 
-Pour une distribution Poisson $y \sim Pois(\lambda)$ avec le lien log par défault nous avons $log(\lambda)=\eta$ avec l'inverse de ce lien $\lambda=e^\eta$.
+Pour une distribution Poisson $y \sim Pois(\lambda)$ avec le lien log
+par défault nous avons $log(\lambda)=\eta$ avec l'inverse de ce lien
+$\lambda=e^\eta$.
 
-Comme pour la régression logistique, la régression de Poisson utilise la fonction glm. Il faut spécifier la famille poisson et (optionnellement) le lien log. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
+Comme pour la régression logistique, la régression de Poisson utilise la
+fonction glm. Il faut spécifier la famille poisson et (optionnellement)
+le lien log. En effet, le logarithme est la foncton de lien par défaut
+pour la régression de Poisson sur `R`.
 
 ```{r}
 glm.poi <- glm(Galumna~WatrCont + SubsDens, family = poisson(link = "log"), data = mites )
 summary(glm.poi)
 ```
 
-Nous allons, de plus, essayer un modèle plus complexe avec interaction entre son contenu en eau et sa densité et ainsi faire notre choix.
+Nous allons, de plus, essayer un modèle plus complexe avec interaction
+entre son contenu en eau et sa densité et ainsi faire notre choix.
 
 ```{r}
 glm.poi1 <- glm(Galumna~WatrCont * SubsDens , family = poisson(link = "log"), data = mites )
 summary(glm.poi1)
 ```
+
 ```{r}
 kable(data.frame(AIC(glm.poi), AIC(glm.poi1)), col.names = c("Modèle 1", "Modèle 2"), caption = "AIC des modèles")
 ```
 
-L'AIC de ce modele est égale à 174.3133, ce qui est sensiblement égale au premier modèle qui avait un AIC de 174.6502. Cependant, on observe dans le `summary` que la varible `SubsDens` ainsi que la variable interaction `WatrCont:SubsDens` ne sont pas significatives. Ce modele n'a donc pas un meilleur ajustement, nous le rejeton. 
+L'AIC de ce modele est égale à 174.3133, ce qui est sensiblement égale
+au premier modèle qui avait un AIC de 174.6502. Cependant, on observe
+dans le `summary` que la varible `SubsDens` ainsi que la variable
+interaction `WatrCont:SubsDens` ne sont pas significatives. Ce modele
+n'a donc pas un meilleur ajustement, nous le rejeton.
 
-Le modele selectionné s'écrit donc : $$ln(\lambda)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$$
-ce qui nous donne à l'aide du `summary` de notre modèle :
-$$ln(\lambda)=1.89-0.008*WatrCont+0.023*SubsDens$$
-Nous allons maintenant interpreter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\mu_i=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$, puis de déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
+Le modele selectionné s'écrit donc :
+$$ln(\lambda)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$$ ce qui nous
+donne à l'aide du `summary` de notre modèle :
+$$ln(\lambda)=1.89-0.008*WatrCont+0.023*SubsDens$$ Nous allons
+maintenant interpreter les coefficients de notre modèle. Nous allons
+determiner l'effet de chaque coefficient du modèle sur le prédicteur
+linéaire $\mu_i=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$, puis de
+déduire l'effet sur la moyenne de réponse à partir de la fonction
+$\lambda=e^\eta$.
 
-- Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable SubsDens reste constante. Nous avons donc le facteur $e^-0.008=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
-- Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur  $e^0.023=1.023267$. On en conclut que la densité n'influe pas sur l'abondance de Galumna. 
+-   Le coefficient `WatrCont` qui indique le contenu en eau, indique que
+    $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de
+    `WatrCont` si la variable SubsDens reste constante. Nous avons donc
+    le facteur $e^-0.008=0.99$ qui correspond à une perte de 1% de
+    l'abondance de Galumna par unité de contenu en eau (`WatrCont`)
+    supplémentaire.
+-   Le coefficient `SubsDens` qui indique la densité, a un changement
+    additif de $0.023$ qui correspond au facteur $e^0.023=1.023267$. On
+    en conclut que la densité n'influe pas sur l'abondance de Galumna.
 
-Nous allons maintenant tester si nous avons de la surdispersion dans notre modèle. Par définition, nous avons que quand la déviance résiduelle est supérieur au nombre de degrés résiduels, le modèle est surdispersé.
-On peut estimer un paramètre de surdispersion $$\phi = \frac{\text{Degré de liberté résiduels}}{\text{Déviance résiduelle}}$$.
-Nous avons donc $\phi = \frac{101.49}{67}=1.514776$. 
-Sous l'hypothèse nulle de non surdispersion ($\phi=1$), la deviance D suit une loi du $\chi^2$ à $(n-p)=70-3=67$ degrès de liberté. 
-Rappelons que nous rejetons $H_0$ si $D>\chi^2_{67,0.95}$ avec, d'après la table de la loi du khi-deux, $\chi^2_{67,0.95}=87,11$. Dans le `summary` de notre modèle nous avons que $D=101.49$ pour $67$ degrès de liberté. Nous rejetons donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos données. Nous savons que la non-indépendance des observations individuelles peut causer une surdispersion des données par rapport aux suppositions de la distribution de Poisson. 
+Nous allons maintenant tester si nous avons de la surdispersion dans
+notre modèle. Par définition, nous avons que quand la déviance
+résiduelle est supérieur au nombre de degrés résiduels, le modèle est
+surdispersé. On peut estimer un paramètre de surdispersion
+$$\phi = \frac{\text{Degré de liberté résiduels}}{\text{Déviance résiduelle}}$$.
+Nous avons donc $\phi = \frac{101.49}{67}=1.514776$. Sous l'hypothèse
+nulle de non surdispersion ($\phi=1$), la deviance D suit une loi du
+$\chi^2$ à $(n-p)=70-3=67$ degrès de liberté. Rappelons que nous
+rejetons $H_0$ si $D>\chi^2_{67,0.95}$ avec, d'après la table de la loi
+du khi-deux, $\chi^2_{67,0.95}=87,11$. Dans le `summary` de notre modèle
+nous avons que $D=101.49$ pour $67$ degrès de liberté. Nous rejetons
+donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos
+données. Nous savons que la non-indépendance des observations
+individuelles peut causer une surdispersion des données par rapport aux
+suppositions de la distribution de Poisson.
 
-Pour determiner si le $\chi^2$ diffère significativement de la valeur attendue selon la distribution de Poisson, nous pouvons calculer la probabilité d'avoir obtenu un $\chi^2$ plus élevé si le modèle est correct.
+Pour determiner si le $\chi^2$ diffère significativement de la valeur
+attendue selon la distribution de Poisson, nous pouvons calculer la
+probabilité d'avoir obtenu un $\chi^2$ plus élevé si le modèle est
+correct.
+
 ```{r}
 chisq <- sum((mites$Galumna-fitted(glm.poi))^2/fitted(glm.poi))
 1-pchisq(chisq, df=glm.poi$df.residual)
 ```
+
 ```{r}
 disp <- chisq/glm.poi$df.residual
 disp
 ```
-L'estimé du paramètre de dispersion est de $\hat{c}=2.1$. Cependant, l'estimation de ce paramètre de dispersion n'est pas trop élevé. Il faut faire attention quand cette valeur dépasse $5$. Les estimés des coefficients de la régression de Poisson demeurent valides, mais il faut multiplier leurs erreurs-types par $\sqrt{\hat{c}}$. Autrement dit, la surdispersion n'introduit pas de biais, mais augmente l'incertitude sur les valeurs des coefficients. 
 
-Pour corriger les erreurs-types, nous allons ajouter un argument `dispersion` dans la fonction `summary`. Ce qui revient à utiliser la famille `quasipoisson` dans notre modèle.
+L'estimé du paramètre de dispersion est de $\hat{c}=2.1$. Cependant,
+l'estimation de ce paramètre de dispersion n'est pas trop élevé. Il faut
+faire attention quand cette valeur dépasse $5$. Les estimés des
+coefficients de la régression de Poisson demeurent valides, mais il faut
+multiplier leurs erreurs-types par $\sqrt{\hat{c}}$. Autrement dit, la
+surdispersion n'introduit pas de biais, mais augmente l'incertitude sur
+les valeurs des coefficients.
+
+Pour corriger les erreurs-types, nous allons ajouter un argument
+`dispersion` dans la fonction `summary`. Ce qui revient à utiliser la
+famille `quasipoisson` dans notre modèle.
+
 ```{r}
 summary(glm.poi, dispersion = disp)
 glm.poi2 <- glm(Galumna~WatrCont+SubsDens , family = quasipoisson, data = mites )
@@ -563,13 +770,3 @@ summary(glm.poi2)
 ```
 
 Conclure quelque chose ?!
-
-
-
-
-
-
-
-
-
-

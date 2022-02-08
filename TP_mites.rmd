@@ -22,6 +22,8 @@ library(ResourceSelection)
 library(ROCR)
 library(dplyr)
 library(knitr)
+library(gridExtra)
+library(ggplot2)
 ```
 
 ```{=tex}
@@ -38,10 +40,9 @@ Note à nous meme à dégager plus tard : j'ai rajouté le declareunicodecharact
 ## Importation des données
 
 ```{r}
-#mites<-read.csv("/Users/margauxtouze/Desktop/FAC/M2/S2/Étude de cas/Data/mites.csv")
-#mites <- read.csv("/Users/romane/Université/Master 2 IS/S4/Étude de cas/data/mites.csv")
-#str(mites)
-mites <- read.csv("/Users/camilleloisel/Documents/COURS M2 /SEMESTRE 2/Etude de cas/mites.csv")
+#mites<-read.csv("/Users/margauxtouze/Desktop/FAC/M2/S2/Étude de cas/Data/mites.csv")
+mites <- read.csv("mites.csv")
+str(mites)
 ```
 
 \newpage
@@ -70,44 +71,36 @@ Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire gaussi
 
 Pour chaque modèle expliquant `Galumna`, `prop` et `pa`, nous regarderons si toutes ces hypothèses sont vérifiées, sauf la **6** qui est toujours vérifiée.
 
-### (H3) Linéarité du modèle
+### (H1) Linéarité du modèle
 
 Nous allons observer la linéarité du modèle dans un premier temps par représentation graphique. Nous représenterons chaque variable à expliquer en fonction des variables `WatrCont` et `SubsDens` qui sont les deux seules variables quantitatives explicatives.
 
 **Variable réponse Galumna**
 
 ```{r}
-par(mfrow=c(1,2))
 lm.g.subsdens<-lm(Galumna~SubsDens, data=mites)
-plot(mites$SubsDens, mites$Galumna)
-abline(lm.g.subsdens, col=2)
 lm.g.watrcont<-lm(Galumna~WatrCont, data=mites)
-plot(mites$WatrCont, mites$Galumna)
-abline(lm.g.watrcont, col=2)
+p1 <- ggplot(data=mites, aes(x=SubsDens, y=Galumna)) + geom_jitter() + geom_abline(intercept = coef(lm.g.subsdens)[1], slope = coef(lm.g.subsdens)[2], color="darkred")
+p2 <- ggplot(data=mites, aes(x=WatrCont, y=Galumna)) + geom_jitter() + geom_abline(intercept = coef(lm.g.watrcont)[1], slope = coef(lm.g.watrcont)[2], color="darkred")
+grid.arrange(p1,p2, nrow=1)
 ```
-
-2/ pa
+**Variable réponse pa**
 
 ```{r}
-par(mfrow=c(1,2))
 lm.pa.subsdens<-lm(pa~SubsDens, data=mites)
-plot(mites$SubsDens, mites$pa)
-abline(lm.pa.subsdens, col=2)
 lm.pa.watrcont<-lm(pa~WatrCont, data=mites)
-plot(mites$WatrCont, mites$pa)
-abline(lm.pa.watrcont, col=2)
+p1 <- ggplot(data=mites, aes(x=SubsDens, y=pa)) + geom_point() + geom_abline(intercept = coef(lm.pa.subsdens)[1], slope = coef(lm.pa.subsdens)[2], color="darkred")
+p2 <- ggplot(data=mites, aes(x=WatrCont, y=pa)) + geom_point() + geom_abline(intercept = coef(lm.pa.watrcont)[1], slope = coef(lm.pa.watrcont)[2], color="darkred")
+grid.arrange(p1,p2, nrow=1)
 ```
-
-3/ prop
+**Variable réponse prop**
 
 ```{r}
-par(mfrow=c(1,2))
 lm.prop.subsdens<-lm(prop~SubsDens, data=mites)
-plot(mites$SubsDens, mites$prop)
-abline(lm.prop.subsdens, col=2)
 lm.prop.watrcont<-lm(prop~WatrCont, data=mites)
-plot(mites$WatrCont, mites$prop)
-abline(lm.prop.watrcont, col=2)
+p1 <- ggplot(data=mites, aes(x=SubsDens, y=prop)) + geom_point() + geom_abline(intercept = coef(lm.prop.subsdens)[1], slope = coef(lm.prop.subsdens)[2], color="darkred")
+p2 <- ggplot(data=mites, aes(x=WatrCont, y=prop)) + geom_point() + geom_abline(intercept = coef(lm.prop.watrcont)[1], slope = coef(lm.prop.watrcont)[2], color="darkred")
+grid.arrange(p1,p2, nrow=1)
 ```
 
 Test de Harvey-Collier :
@@ -501,7 +494,7 @@ La p-value est très grande. On accepte donc $H_0$ et on conclut que le modèle 
 On finit par représenter les résidus.
 
 ```{r}
-res<-residuals(prop.reg.back, type="pearson", )
+res<-residuals(prop.reg.back, type="pearson")
 plot(res, ylim=c(-3,5), ylab="Residuals")
 abline(h=c(-2,2), col=2)
 ```
@@ -518,7 +511,7 @@ Rappelons que le modèle linéaire général est un cas particulier de GLM, on a
 
 Pour une distribution Poisson $y \sim Pois(\lambda)$ avec le lien log par défault nous avons $log(\lambda)=\eta$ avec l'inverse de ce lien $\lambda=e^\eta$.
 
-Comme pour la régression logistique, la régression de Poisson utilise la fonction glm. Il faut spécifier la famille poisson et (optionnellement) le lien log. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
+Comme pour la régression logistique, la régression de Poisson utilise la fonction glm. Il faut spécifier la famille poisson et (optionnellement) le lien log. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
 
 Nous allons commencer par le modèle global et ensuite effectuer une sélection stepwise.
 ```{r}
@@ -599,7 +592,7 @@ Conclure quelque chose ?!
 
 [**Données manquantes :**]{.underline}
 
-# 5.  Simulations scénarios NA
+# 5. Simulations scénarios NA
 
 ```{r}
 set.seed(123)
@@ -610,6 +603,7 @@ library(stats)
 
 ### I.  Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne  et de variance  et ajouter des données manquantes sur Y selon :
 
+
 ```{r}
 n <- 100
 mu <- c(0,0)
@@ -618,7 +612,7 @@ don <- rmvnorm(n=n, mean = mu, sigma = matcov)
 colnames(don) <- c("X", "Y") 
 ```
 
-### a.  Un mécanisme **MCAR** tel que $P(M=0)=0.35$.
+### a. Un mécanisme **MCAR** tel que $P(M=0)=0.35$.
 
 ```{r}
 set.seed(123)
@@ -632,7 +626,7 @@ don.ismcar <- as.data.frame(don.ismcar) # création du jeu avec 0.35 de NA pour 
 summary(don.ismcar)
 ```
 
-### b.  Un mécanisme **MAR** $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désignale la fonction de répartition d'une loi Normale $\mathcal{N}(0,1)$.
+### b. Un mécanisme **MAR** $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désignale la fonction de répartition d'une loi Normale $\mathcal{N}(0,1)$.
 
 ```{r}
 set.seed(123)
@@ -650,7 +644,7 @@ don.ismar
 summary(don.ismar)
 ```
 
-### c.  Un mécanisme **MNAR** $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$.
+### c. Un mécanisme **MNAR** $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$.
 
 ```{r}
 set.seed(123)

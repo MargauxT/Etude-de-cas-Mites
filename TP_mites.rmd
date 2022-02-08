@@ -246,9 +246,9 @@ boxcox
 
 # 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa) :
 
-Objectif : déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
+**Objectif** : déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
 
---- Recherche du meilleur modèle ---
+1.   Recherche du meilleur modèle
 
 -   Méthode 'à la main'
 
@@ -270,24 +270,25 @@ summary(glm.best.pa)
 
 Ce modèle semble mieux car les variables sont toutes vraiment significatives.
 
-Afin de s'assurer de la significativité du retrait des autres variables, nous pouvons réaliser un test de déviance :
+Afin de s'assurer de la significativité du retrait des autres variables, nous pouvons réaliser un test de déviance.
 
 ```{r}
 anova(glm.best.pa, glm.tot.pa, test = 'Chisq')
 ```
 
-La grande p-value nous indique que les variables présentent dans le plus grand modèle mais pas dans les plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critères BIC pour chacuns des euc modèles :
+La grande p-value nous indique que les variables présentent dans le plus grand modèle mais pas dans les plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critères BIC (critère explicatif) pour chacuns des deux modèles.
 
 ```{r}
-BIC(glm.tot.pa)
-BIC(glm.best.pa)
+kable(data.frame(BIC(glm.best.pa),BIC(glm.tot.pa)), col.names = c("Petit modèle", "Grand modèle"), caption = "BIC")
 ```
 
-En accord avec les résultats précédents, le critère BIC est inférieur pour le deuxième modèle. Cela confirme notre choix de garder uniquement les variables WatrCont, SubsDens et Topo dans notre modèle.
+En accord avec les résultats précédents, le critère BIC est inférieur pour le petit modèle. Cela confirme notre choix de garder uniquement les variables WatrCont, SubsDens et Topo.
 
 Nous pouvons comparer ce modèle obtenu avec celui déterminé par une sélection automatique.
 
--   Méthode de sélection stepwise descendante avec le critère BIC
+-   Méthode automatique
+
+Nous effectuons une sélection stepwise descendante, toujours avec le critère BIC. Celle-ci part du plus gros modèle et tente d'enlever les varaibles les moins significtives afin de retrouver le meilleur modèle.
 
 ```{r}
 n <- nrow(mites)
@@ -295,15 +296,15 @@ glm.tot.pa.step <- step(glm.tot.pa, direction = "backward", k = log(n))
 glm.tot.pa.step$formula
 ```
 
-La sélection automatique de modèle retient également le modèle contenant les variables WatrCont, SubsDens et Topo car c'est celui pour lequel le BIC est le plus faible.
+La sélection automatique retient également le modèle contenant les variables WatrCont, SubsDens et Topo car c'est celui pour lequel le BIC est le plus faible.
 
 Par conséquent, nous retenons le modèle suivant pour la suite :
 
-$$\hat{Pa}= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock$$
+$$logit(\hat{Pa})= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock$$
 
---- Interprétation des coefficients ---
+2.   Interprétation des coefficients
 
-La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio.
+La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio. Ce dernier est équivalent à $\exp(\beta_j)$ pour la variable $j$.
 
 ```{r}
 exp(glm.best.pa$coefficients)
@@ -311,32 +312,82 @@ exp(glm.best.pa$coefficients)
 
 Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (WatrCont), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis ce que pour une unité de densité du substrat (SubsDens) en plus, le risque est plus élevé de $18$%. Enfin, lorsque de la topographie est de type Hummock, il y a énroméménet de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
 
---- Evaluation de l'ajustement du modèle ---
+3.   Validation du modèle
 
-Pour tester la qualité de l'ajustement de notre modèle, on peut utiliser le test de Pearson basé sur les résidus de Pearson.
+Afin de valider notre modèle, nous allons à présent évaluer son ajustement, ainsi que ses pouvoirs explicatifs et de classfication.
+
+-   Evaluation de l'ajustement du modèle
+
+    -   Effet levier
+
+    Dans un premier temps, nous pouvons nous intéresser aux points leviers, c'est à dire les points qui influencent fortement sur leur propre estimation.
+
+    ```{r}
+    p<-length(glm.best.pa$coefficients)
+    n<-nrow(mites)
+    plot(influence(glm.best.pa)$hat, type="h", ylab="h_ii")
+    abline(h=c(2*p/n, 3*p/n), col=2)
+    ```
+
+    On remarque sur le graphique précédent que quatre observations peuvent être considérées comme points leviers. Une connaissance plus approfondie du jeu de données nous permettrait de comprendre plus en détails ces résultats.
+
+    -   Points influents
+
+    Regardons ensuite les points influents sur le modèle. Ce sont des points importants car leur présence joue beaucoup sur l'estimation des coefficients. Pour les déterminer, on peut représenter leur distance de Cook, c'est à dire la distance entre le vecteur des coefficients estimés avec toutes les observations et celui estimé avec toutes les observations sauf une.
+
+    ```{r}
+    plot(cooks.distance(glm.best.pa), type="h", ylab="Distance de Cook")
+    ```
+
+    Sur le graphique obtenu, on remarque notamment l'observation 15 qui a une distance de Cook nettement supérieure aux autres. Cela signifie que c'est un point influent. Là encore, il serait necessaire de connaître plus en détails notre jeu de données pour pouvoir l'expliquer et notammant déterminer si c'est un point levier, un point abberrant ou les deux. Nous pouvons tout de même remarquer qu'il figurait déja dans les points à effet levier relevés précédemment.
+
+    -   Test de Pearson
+
+    Afin de tester la qualité de l'ajustement de notre modèle, on peut utiliser le test de Pearson basé sur les résidus de Pearson.
+
+    ```{r}
+    res <- sum(residuals(glm.best.pa, type = "pearson")^2)
+    ddl <- df.residual(glm.best.pa)
+    pvalue = 1 - pchisq(res,ddl)
+    pvalue
+    ```
+
+    La p-value étant très grande, on admet que le modèle est très bien adapté aux données. On peut tout de même visualiser ces résidus de Pearson.
+
+    ```{r}
+    res2 <- residuals(glm.best.pa, type="pearson")
+    plot(res2, ylab="Residuals")
+    abline(h=c(-2,2), col=2)
+    ```
+
+    Nous remarquons deux individus ayant des résidus extrèmes. Une nouvelle fois, nous retrouvons l'individu 15. Il serait peut-être judicieux de l'enlever pour la suite. Cependant, le jeu de données n'étant pas très grand, nous décidons de le conserver afin de ne pas le réduire davantage.
+
+    -   Test d'Hosmer-Lemeshow
+
+    Par ailleurs, on peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la pertinence du modèle.
+
+    ```{r}
+    hoslem.test(mites$pa, fitted(glm.best.pa))
+    ```
+
+    De même, la très grande p-value nous indique que le modèle est bien adapté aux données.
+
+    Avant de valider définitivement le choix de ce modèle, il faut évaluer son pouvoir explicatif ainsi que son pouvoir de classification.
+
+-   Evaluation du pouvoir explicatif du modèle
+
+Afin d'évaluer le pouvoir explicatif de notre modèle, on peut calculer son Pseudo-$R^2$. Il en existe plusieurs. Ici, nous allons déterminer celui-ci de McFadden (1973) correspondant au quotient entre la différence des déviances nulles et résiduelles et la déviance nulle.
 
 ```{r}
-res <- sum(residuals(glm.best.pa, type = "pearson")^2)
-ddl <- df.residual(glm.best.pa)
-pvalue = 1 - pchisq(res,ddl)
-pvalue
+pseudoR2 <- ((glm.best.pa$null.deviance-glm.best.pa$deviance)/glm.best.pa$null.deviance)
+pseudoR2
 ```
 
-La p-value était très grande, on admet que le modèle est très bien adapté aux données.
+D'après ce résultat, on en conclut que notre modèle explique plus de $62.2$% des données. Regardons ensuite si il est capable de bien classer ces données.
 
-On peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la pertinence du modèle :
+-    Evaluation du pouvoir de classification du modèle
 
-```{r}
-hoslem.test(mites$pa, fitted(glm.best.pa))
-```
-
-De même, la très grande p-value nous indique que le modèle est bien adapté aux données.
-
-Avant de valider définitivement le choix de ce modèle, il faut évaluer son pouvoir prédictif.
-
---- Evaluation de son pouvoir prédictif ---
-
-Pour évaluer le pouvoir prédictif de notre modèle, nous allons juger ses prédictions grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction du modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci. Nous obtenons alors les prédictions de pa pour tous les individus et nous pouvons tracer la courbe ROC.
+Pour évaluer le pouvoir de classification de notre modèle, nous allons juger ses prédictions grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction du modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci. Nous obtenons alors les prédictions de pa pour tous les individus et nous pouvons tracer la courbe ROC.
 
 ```{r}
 pred=1:n
@@ -352,7 +403,7 @@ roc=performance(pr, measure="tpr",x.measure="fpr")
 plot(roc)
 ```
 
-Cette courbe résume le taux de vrais positifs en fonction du taux de faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la diagonale. Ici, nous avons une courbe largement au dessus de la diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe (AUC) :
+Cette courbe résume le taux de vrais positifs en fonction du taux de faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la diagonale. Ici, nous avons une courbe largement au dessus de la diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe (AUC).
 
 ```{r}
 perf <- performance(pr, "auc")
@@ -374,9 +425,9 @@ Nous remarquons que le taux d'erreur le plus faible est pour un seuil de 0.5. C'
 table(pred>0.5, mites$pa)
 ```
 
-D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. Par conséquent, le taux d'erreur est de $\frac{7}{70}=0.1$. On peut en conclure que ce modèle a de bonnes qualités prédictives.
+D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. Par conséquent, le taux d'erreur est de $\frac{7}{70}=0.1$. On peut en conclure que ce modèle a de bonnes qualités de classification.
 
-Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient des bons résultats, tant sur son ajustement que sur son pouvoir prédictif.
+Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient des bons résultats, tant sur son ajustement que sur son pouvoir de classification.
 
 \newpage
 
@@ -513,12 +564,14 @@ Pour une distribution Poisson $y \sim Pois(\lambda)$ avec le lien log par défau
 
 Comme pour la régression logistique, la régression de Poisson utilise la fonction glm. Il faut spécifier la famille poisson et (optionnellement) le lien log. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
 
+
 Nous allons commencer par le modèle global et ensuite effectuer une sélection stepwise.
 ```{r}
 glm.tot.poi <- glm(pa~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = poisson(link='log'))
 summary(glm.tot.poi)
 ```
 Nous observons dans le `summary` de notre modèle global qu'il n'y que très peu de variables significatives. On créé un modèle avec les deux variables significatives du modèle complet : `WatrCont` et `SubsDens`.
+
 
 ```{r}
 glm.poi <- glm(Galumna~WatrCont + SubsDens, family = poisson(link = "log"), data = mites )
@@ -601,7 +654,9 @@ library(mvtnorm)
 library(stats)
 ```
 
-### I.  Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne  et de variance  et ajouter des données manquantes sur Y selon :
+
+### I. Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne et de variance et ajouter des données manquantes sur Y selon :
+
 
 
 ```{r}

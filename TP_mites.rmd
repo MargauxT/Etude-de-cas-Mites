@@ -5,10 +5,10 @@ date: "02/03/2022"
 header-includes:
   - \DeclareUnicodeCharacter{0301}{/}
 output:
-  pdf_document: default
-  html_notebook: default
   html_document:
     df_print: paged
+  html_notebook: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -564,51 +564,81 @@ Pour une distribution Poisson $y \sim Pois(\lambda)$ avec le lien log par défau
 
 Comme pour la régression logistique, la régression de Poisson utilise la fonction glm. Il faut spécifier la famille poisson et (optionnellement) le lien log. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
 
+
+Nous allons commencer par le modèle global et ensuite effectuer une sélection stepwise.
+```{r}
+glm.tot.poi <- glm(pa~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = poisson(link='log'))
+summary(glm.tot.poi)
+```
+Nous observons dans le `summary` de notre modèle global qu'il n'y que très peu de variables significatives. On créé un modèle avec les deux variables significatives du modèle complet : `WatrCont` et `SubsDens`.
+
+
 ```{r}
 glm.poi <- glm(Galumna~WatrCont + SubsDens, family = poisson(link = "log"), data = mites )
 summary(glm.poi)
 ```
 
-Nous allons, de plus, essayer un modèle plus complexe avec interaction entre son contenu en eau et sa densité et ainsi faire notre choix.
+Avant de confirmer ce modèle, nous allons effectuer une recherche automatique du meilleur modèle en partant du plus gros modèle et en se basant sur le critère BIC, critère explicatif.
 
 ```{r}
-glm.poi1 <- glm(Galumna~WatrCont * SubsDens , family = poisson(link = "log"), data = mites )
-summary(glm.poi1)
+glm.reg.back<-step(glm.tot.poi, direction="backward", k=log(nrow(mites)))
+glm.reg.back$formula
 ```
+Avec une procédure de sélection backward, on garde 3 variables : `WatrCont`, `SubsDens` et `Topo`.
+
+Nous avons donc un nouveau modèle 
+```{r}
+glm.poi3 <- glm(Galumna~WatrCont + SubsDens + Topo, family = poisson(link = "log"), data = mites )
+summary(glm.poi3)
+```
+Pour cette étude, on se place dans un cadre plus explicatif que prédictif. On décide donc de comparer ces trois modèles avec le BIC :
 
 ```{r}
-kable(data.frame(AIC(glm.poi), AIC(glm.poi1)), col.names = c("Modèle 1", "Modèle 2"), caption = "AIC des modèles")
+kable(data.frame(BIC(glm.tot.poi),BIC(glm.poi),BIC(glm.poi3)), col.names = c("Modèle 1", "Modèle 2", "Modèle 3"), caption = "BIC des différents modèles")
+```
+Avec pour le modèle 1, le modèle globale, pour le modèle 2, le modèle avec les variables `WatrCont` et `SubsDens` et le modèle 3, le modèle selectionné par la sélection stepwise. 
+
+Le modèle à trois variables est celui qui minimise le BIC. On peut tout de même effectuer un test de modèle emboîtés afin de regarder si la troisième variable `Topo` est bien significative. On teste donc le modèle à 2 variables contre celui à 3 variables.
+
+```{r}
+anova(glm.poi3, glm.poi,test="Chisq")
+```
+La p-value est inférieure à 0.05 donc la variable `Topo` est significative.
+
+```{r}
+glm.poi3 <- glm(Galumna~WatrCont + SubsDens + Topo, family = poisson(link = "log"), data = mites )
+summary(glm.poi3)
 ```
 
-L'AIC de ce modele est égale à 174.3133, ce qui est sensiblement égale au premier modèle qui avait un AIC de 174.6502. Cependant, on observe dans le `summary` que la varible `SubsDens` ainsi que la variable interaction `WatrCont:SubsDens` ne sont pas significatives. Ce modele n'a donc pas un meilleur ajustement, nous le rejeton.
+De plus, on remarque que toutes les variables sont significatives d'après le test de Wald.
 
-Le modele selectionné s'écrit donc : $$ln(\lambda)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$$ ce qui nous donne à l'aide du `summary` de notre modèle : $$ln(\lambda)=1.89-0.008*WatrCont+0.023*SubsDens$$ Nous allons maintenant interpreter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\mu_i=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens$, puis de déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
+Le modele selectionné s'écrit donc : $$ln(\lambda)=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens+\beta_3*Topo$$ ce qui nous donne à l'aide du `summary` de notre modèle : $$ln(\lambda)=1.89-0.008*WatrCont+0.023*SubsDens + 0.892*Topo $$ Nous allons maintenant interpreter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\mu_i=\beta_O+\beta_1*WatrCont+\beta_2*SubsDens+\beta_3*Topo$, puis de déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
 
 -   Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable SubsDens reste constante. Nous avons donc le facteur $e^-0.008=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
 -   Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur $e^0.023=1.023267$. On en conclut que la densité n'influe pas sur l'abondance de Galumna.
+- Le coefficient `Topo` qui représente la topographie de type Hummock, a un changement additif de $0.892$ qui correspond au facteur $e^0.892=2.440005$. Cela correspond a une augmentation de 250% de l'abondance de Galumna pour une topographie de type Hummock.
 
-Nous allons maintenant tester si nous avons de la surdispersion dans notre modèle. Par définition, nous avons que quand la déviance résiduelle est supérieur au nombre de degrés résiduels, le modèle est surdispersé. On peut estimer un paramètre de surdispersion $$\phi = \frac{\text{Degré de liberté résiduels}}{\text{Déviance résiduelle}}$$. Nous avons donc $\phi = \frac{101.49}{67}=1.514776$. Sous l'hypothèse nulle de non surdispersion ($\phi=1$), la deviance D suit une loi du $\chi^2$ à $(n-p)=70-3=67$ degrès de liberté. Rappelons que nous rejetons $H_0$ si $D>\chi^2_{67,0.95}$ avec, d'après la table de la loi du khi-deux, $\chi^2_{67,0.95}=87,11$. Dans le `summary` de notre modèle nous avons que $D=101.49$ pour $67$ degrès de liberté. Nous rejetons donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos données. Nous savons que la non-indépendance des observations individuelles peut causer une surdispersion des données par rapport aux suppositions de la distribution de Poisson.
+Nous allons maintenant tester si nous avons de la surdispersion dans notre modèle. Par définition, nous avons que quand la déviance résiduelle est supérieur au nombre de degrés résiduels, le modèle est surdispersé. On peut estimer un paramètre de surdispersion $$\phi = \frac{\text{Degré de liberté résiduels}}{\text{Déviance résiduelle}}$$. Nous avons donc $\phi = \frac{91.699}{66}=1.389379$. Sous l'hypothèse nulle de non surdispersion ($\phi=1$), la deviance D suit une loi du $\chi^2$ à $(n-p)=70-4=66$ degrès de liberté. Rappelons que nous rejetons $H_0$ si $D>\chi^2_{66,0.95}$ avec, d'après la table de la loi du khi-deux, $\chi^2_{67,0.95}=85,97$. Dans le `summary` de notre modèle nous avons que $D=91,699$ pour $66$ degrès de liberté. Nous rejetons donc $H_0$ et nous concluons que nous avons de la surdispersion dans nos données. Nous savons que la non-indépendance des observations individuelles peut causer une surdispersion des données par rapport aux suppositions de la distribution de Poisson.
 
 Pour determiner si le $\chi^2$ diffère significativement de la valeur attendue selon la distribution de Poisson, nous pouvons calculer la probabilité d'avoir obtenu un $\chi^2$ plus élevé si le modèle est correct.
 
 ```{r}
-chisq <- sum((mites$Galumna-fitted(glm.poi))^2/fitted(glm.poi))
-1-pchisq(chisq, df=glm.poi$df.residual)
+chisq <- sum((mites$Galumna-fitted(glm.poi3))^2/fitted(glm.poi3))
+1-pchisq(chisq, df=glm.poi3$df.residual)
 ```
 
 ```{r}
-disp <- chisq/glm.poi$df.residual
+disp <- chisq/glm.poi3$df.residual
 disp
 ```
 
-L'estimé du paramètre de dispersion est de $\hat{c}=2.1$. Cependant, l'estimation de ce paramètre de dispersion n'est pas trop élevé. Il faut faire attention quand cette valeur dépasse $5$. Les estimés des coefficients de la régression de Poisson demeurent valides, mais il faut multiplier leurs erreurs-types par $\sqrt{\hat{c}}$. Autrement dit, la surdispersion n'introduit pas de biais, mais augmente l'incertitude sur les valeurs des coefficients.
+L'estimé du paramètre de dispersion est de $\hat{c}=1.9$. Cependant, l'estimation de ce paramètre de dispersion n'est pas trop élevé. Il faut faire attention quand cette valeur dépasse $5$. Les estimés des coefficients de la régression de Poisson demeurent valides, mais il faut multiplier leurs erreurs-types par $\sqrt{\hat{c}}$. Autrement dit, la surdispersion n'introduit pas de biais, mais augmente l'incertitude sur les valeurs des coefficients.
 
-Pour corriger les erreurs-types, nous allons ajouter un argument `dispersion` dans la fonction `summary`. Ce qui revient à utiliser la famille `quasipoisson` dans notre modèle.
+Pour corriger les erreurs-types, nous allons utiliser la famille `quasipoisson` dans notre modèle.
 
 ```{r}
-summary(glm.poi, dispersion = disp)
-glm.poi2 <- glm(Galumna~WatrCont+SubsDens , family = quasipoisson, data = mites )
-summary(glm.poi2)
+glm.poi4 <- glm(Galumna ~ WatrCont + SubsDens + Topo , family = quasipoisson, data = mites )
+summary(glm.poi4)
 ```
 
 Conclure quelque chose ?!
@@ -626,6 +656,7 @@ library(stats)
 
 
 ### I. Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne et de variance et ajouter des données manquantes sur Y selon :
+
 
 
 ```{r}

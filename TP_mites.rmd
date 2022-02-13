@@ -41,14 +41,97 @@ Note à nous meme à dégager plus tard : j'ai rajouté le declareunicodecharact
 ```{r}
 #mites<-read.csv("/Users/margauxtouze/Desktop/FAC/M2/S2/Étude de cas/Data/mites.csv")
 mites <- read.csv("mites.csv")
-str(mites)
 ```
 
 \newpage
 
 ## Introduction
 
-Présenter les données, expliquer la démarche
+L'objectif de cette première partie est d'étudier le jeu de données sur les mites Oribatid mis à disposition par P. Legendre et D. Borcard et décrit dans leur article *Borcard et al. 1994*. Tout particulièrement, nous essaierons de construire différents modèles linéaires simples puis généralisés pour décrire trois des variables de ce jeu de données.
+
+Pour leur étude, Legendre et Borcard ont,choisit une zone située à Saint-Hippolyte, Canada, qu'ils ont divisé en 70 "coeurs". Pour chaque coeur, ils ont récupéré des données environnementales et sur la faune. Le jeu de données que l'on étudie est donc constitué de 70 observations qui correspondent aux coeurs, et de 9 variables décrites ci-dessous.
+
+```{r}
+str(mites)
+```
+
+-   **Galumna** (entier) : nombre de mites *Galumna sp*.
+
+-   **pa** (0 ou 1) : présence (1) ou absence (0) de mites Galumna sp.
+
+-   **totalabund** (entier) : nombre total de mites
+
+-   **prop** (réel entre 0 et 1) : proportion de mites Galumna sp.
+
+-   **SubsDens** (réel) : densité du substrat en $g.L^{-1}$ de matière sèche non comprimée
+
+-   **WatrCont** (réel) : contenu en eau du substrat en $g.L^{-1}$
+
+-   **Substrate** (facteur) : type de substrat, facteur à 7 modalités
+
+-   **Shrub** (facteur) : buissons, facteur à trois modalités
+
+-   **Topo** (facteur) : microtopographie, facteur à 2 modalités Comme décrit ci-dessus, certaines variables sont des facteurs, mais le logiciel R ne les interprète pas comme cela naturellement. Nous allons donc les transformer en facteurs manuellement.
+
+```{r}
+mites$pa <- as.factor(mites$pa)
+mites$Substrate <- as.factor(mites$Substrate)
+mites$Shrub <- as.factor(mites$Shrub)
+mites$Topo <- as.factor(mites$Topo)
+```
+
+Nous allons maintenant représenter ces données afin de mieux les appréhender.\
+Commençons par les variables que l'on va chercher à expliquer par la suite : Galumna, pa et prop.
+
+```{r}
+ggplot(data = mites) + geom_bar(mapping = aes(Galumna), fill='darkred') +ylab("Nombre de coeurs")+xlab("Nombre de Galumna")
+```
+
+On remarque que plus de la moitié des coeurs étudiés ne contiennent pas de mites Galumna. La valeur maximale de Galumna contenue dans un coeur est 8.
+
+```{r}
+ggplot(data = mites) + geom_bar(mapping = aes(pa), fill='darkred') +ylab("Nombre de coeurs")+xlab("Absence ou Présence de Galumna")
+```
+
+On voit ci-dessus plus précisément que 45 coeurs ne contiennent pas de Galumna et 25 coeurs en contiennent.
+
+```{r}
+ggplot(data=mites) + geom_histogram(aes(prop), fill="darkred") + ylab("Nombre de coeurs")+xlab("Proportion de Galumna")
+```
+
+Naturellement, on remarque que 45 coeurs ont une proportion de Galumna de 0%. Pour les autres coeurs, la proportion varie entre 0 et 0.06%.
+
+Passons maintenant aux variables explicatives.
+
+```{r}
+ggplot(data=mites) + geom_histogram(aes(SubsDens), fill="darkred", binwidth = 5) + ylab("Nombre de coeurs")+xlab("SubsDens") 
+```
+
+```{r}
+ggplot(data=mites) + geom_histogram(aes(WatrCont), fill="darkred", binwidth = 40) + ylab("Nombre de coeurs")+xlab("Watrcont") 
+```
+
+Nous pouvons observer la distribution des variables quantitatives SubsDens et WatrCont. Cependant, ces variables étant déterministes, on ne fait pas d'hypothèse de normalité. Donc nous n'avons pas besoin de "vérifier" qu'elles suivent une loi normale, ni d'effectuer des transformations pour que cela soit le cas.
+
+```{r}
+ggplot(data = mites) + geom_bar(mapping = aes(Substrate), fill="darkred") +ylab("Nombre de coeurs")+xlab("Substrate")
+```
+
+Les deux types de substrat majoritaires sont "Interface" et "Sphagn1", qui sont chacun le substrat d'environ 25 coeurs sur les 70 totaux.
+
+```{r}
+ggplot(data = mites) + geom_bar(mapping = aes(Shrub), fill="darkred") +ylab("Nombre de coeurs")+xlab("Shrub")
+```
+
+La variable `Shrub` représente les buissons du coeur. On voit qu'un peu moins d'une vingtaine de coeurs ne contient pas de buisson. Puis environ 25 coeurs contiennnt beaucoup de buissons et peu de buissons.
+
+```{r}
+ggplot(data = mites) + geom_bar(mapping = aes(Topo), fill="darkred") +ylab("Nombre de coeurs")+xlab("Topo")
+```
+
+Finalement, on voit qu'environ 45 coeurs ont une topographie de type "Blanket", les autres ont une topographie de type "Hummock".
+
+Ce premier coup d'oeil aux données nous a permis de remarquer quelque chose d'important : plus de la moitié des coeurs ne contiennent pas de Galumna. Cela siginifie, pour ceux-ci, que la proportion de Galumna est nulle, que la variable Galumna est égale à 0 et que la variable occurence de Galumna est également égale à 0. Il s'agit de garder cela à l'esprit pour la future construction de nos modèles.
 
 pour LM : chercher à valider les hypothèses, ca marche pas, faire des transformations (Box Cox), réessayer de valider les hyp Si ca marche on dit quon pourrait sarreter la mais on cherche a aller plus loin Si ca marche PAS on cherche un autre modele : GLM (si abundance marche, possibilité de faire +1 pour éviter les valeurs=0)
 
@@ -56,23 +139,28 @@ pour LM : chercher à valider les hypothèses, ca marche pas, faire des transfor
 
 ## 1. LM Gaussien
 
-Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire gaussien pour chaque variable réponse que l'on cherche à expliquer : `Galumna`, `prop`, `pa`. Mais afin de constuire un tel modèle, nous émettons plusieurs hypothèses. Le premier travail consiste donc à regarder si ces hypothèses sont vérifiées. Rappelons les hypothèses du modèle linéaire gaussien :
+Dans un premier temps, nous allons essayer d'ajuster un modèle linéaire gaussien pour chaque variable réponse que l'on cherche à expliquer : `Galumna`, `prop`, `pa`. Mais un tel modèle doit vérifier plusieurs hypothèses. Le premier travail consiste donc à regarder si ces hypothèses sont vérifiées. Rappelons les hypothèses du modèle linéaire gaussien :
 
 -   sur la forme du modèle :\
     (H1) **linéarité** du modèle\
 
 -   sur les erreurs $\epsilon_i$ qui sont :\
-    (H2) **centrées** : $\mathbb{E}(\epsilon_i)=0, \forall i=1,..n$\
+    (H2) **centrées** : $\mathbb{E}(\epsilon_i)=0, \forall i=1,..n$\, cette condition est toujours vérifiée par les moindres carrés ordinaires (MCO), technique de résolution de la régression linéaire
     (H3) **homoscédastiques** : $\mathbb{V}(\epsilon_i)=\sigma^2, \forall i$\
     (H4) **non-autocorrélées** : $cor(\epsilon_i, \epsilon_{i}^{'})=0, \forall i\neq i'$\
     (H5) **normales** : $\epsilon_i \sim N(0, \sigma^2)$\
 
--   sur les variables explicatives $X_1,...,X_p$ qui sont :
-
+-   sur les variables explicatives $X_1,...,X_p$ qui sont :\
     (H6) **non aléatoires** : la théorie se généralise facilement pour les variables aléatoires\
     (H7) **non multicolinéaires** : les variables $X_1,...,X_p$ sont linéairement indépendantes, ce qui garantit l'unicité de l'estimateur MCO.
 
-Pour chaque modèle expliquant `Galumna`, `prop` et `pa`, nous regarderons si toutes ces hypothèses sont vérifiées, sauf la **6** qui est toujours vérifiée.
+Pour chaque modèle expliquant `Galumna`, `prop` et `pa`, nous regarderons si toutes ces hypothèses sont vérifiées, sauf la **2** et la **6** qui sont toujours vérifiées.
+
+L'utilisation d'un modèle linéaire nous impose de traiter la variable pa comme une valeur réelle et non comme un facteur. Nous allons donc la retransformer manuellement.
+
+```{r}
+mites$pa <- as.integer(mites$pa)
+```
 
 ### (H1) Linéarité du modèle
 
@@ -81,22 +169,24 @@ Nous allons observer la linéarité du modèle dans un premier temps par représ
 **Variable réponse Galumna**
 
 ```{r}
-lm.g.subsdens<-lm(Galumna~SubsDens, data=mites)
-lm.g.watrcont<-lm(Galumna~WatrCont, data=mites)
-p1 <- ggplot(data=mites, aes(x=SubsDens, y=Galumna)) + geom_jitter() + geom_abline(intercept = coef(lm.g.subsdens)[1], slope = coef(lm.g.subsdens)[2], color="darkred") 
-p2 <- ggplot(data=mites, aes(x=WatrCont, y=Galumna)) + geom_jitter() + geom_abline(intercept = coef(lm.g.watrcont)[1], slope = coef(lm.g.watrcont)[2], color="darkred")
+p1 <- ggplot(data=mites, aes(x=SubsDens, y=Galumna)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(Galumna~SubsDens)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(Galumna~SubsDens)"), values=c("darkred")) + theme(legend.position = "top")
+p2 <- ggplot(data=mites, aes(x=WatrCont, y=Galumna)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(Galumna~WatrCont)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(Galumna~WatrCont)"), values=c("darkred")) + theme(legend.position = "top")
+p2
 grid.arrange(p1,p2, nrow=1)
 ```
+
+On ne voit pas un lien linéaire évident entre Galumna et SubsDens, ni entre Galumna et WatrCont. On voit que la quantité importante de points sur l'axe des abscisses (pour lesquels Galumna=0) semble beaucoup impacter la droite de régression.
 
 **Variable réponse pa**
 
 ```{r}
-lm.pa.subsdens<-lm(pa~SubsDens, data=mites)
-lm.pa.watrcont<-lm(pa~WatrCont, data=mites)
-p1 <- ggplot(data=mites, aes(x=SubsDens, y=pa)) + geom_point() + geom_abline(intercept = coef(lm.pa.subsdens)[1], slope = coef(lm.pa.subsdens)[2], color="darkred")
-p2 <- ggplot(data=mites, aes(x=WatrCont, y=pa)) + geom_point() + geom_abline(intercept = coef(lm.pa.watrcont)[1], slope = coef(lm.pa.watrcont)[2], color="darkred")
+p1 <- ggplot(data=mites, aes(x=SubsDens, y=pa)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(pa~SubsDens)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(pa~SubsDens)"), values=c("darkred")) + theme(legend.position = "top")
+p2 <- ggplot(data=mites, aes(x=WatrCont, y=pa)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(pa~WatrCont)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(pa~WatrCont)"), values=c("darkred")) + theme(legend.position = "top")
+p2
 grid.arrange(p1,p2, nrow=1)
 ```
+
+On ne voit pas non plus un lien linéaire entre la variable pa et les variables explicatives. De plus, comme c'est une variable binaire, il semblerait plus naturel de penser à une régression logistique qu'à une régression linéaire.
 
 **Variable réponse prop**
 
@@ -107,54 +197,61 @@ p2
 grid.arrange(p1,p2, nrow=1)
 ```
 
-Test de Harvey-Collier :
+On fait le même constat pour la variable prop, il ne semble pas y avoir un lien linéaire particulier et la présence de beaucoup de points sur l'axe des abscisses semble influencer fortement la droite de régression.
+
+Pour pousser notre analyse plus loin, nous allons effectuer un test de Harvey-Collier sur les modèles qui expliquent nos variables réponses par les deux variables explicatives quantitatives (SubsDens et WatrCont). Le test de Harvey-Collier consiste à faire un test de Student sur les résidus récursifs. Si la réelle relation entre les variables n'est pas linéaire mais convexe ou concave, la moyenne des résidus récursifs devrait être significativement différente de 0.
 
 ```{r}
-lm.g2<-lm(Galumna~WatrCont+SubsDens, data=mites)
-harvtest(lm.g2, data=mites)
-lm.pa2<-lm(pa~WatrCont+SubsDens, data=mites)
-harvtest(lm.pa2, data=mites)
-lm.prop2<-lm(prop~WatrCont+SubsDens, data=mites)
-harvtest(lm.prop2, data=mites)
+kable(data.frame("p-value Harvey-Collier Test" =
+                   c(harvtest(lm(Galumna~WatrCont+SubsDens, data=mites))$p.value,
+                     harvtest(lm(pa~WatrCont+SubsDens, data=mites))$p.value,
+                     harvtest(lm(prop~WatrCont+SubsDens, data=mites))$p.value),
+                    row.names=c("Galumna~WatrCont+SubsDens",
+                                  "pa~WatrCont+SubsDens",
+                                  "prop~WatrCont+SubsDens")))
 ```
 
-### (H2)
+Au seuil de 5%, on peut conclure que :
 
+-   la relation entre la variable pa et les variables WatrCont et SubsDens n'est pas linéaire
+
+-   la relation entre la variable Galumna et les variables WatrCont et SubsDens est linéaire
+
+-   la relation entre la variable prop et les variables WatrCont et SubsDens est linéaire
+
+À ce stade de l'analyse, on peut déjà conclure qu'il ne sera pas possible d'ajuster un modèle linéaire sur le variable `prop` car l'hypothèse de linéarité n'est pas vérifiée.
+
+### (H3) Erreurs $\epsilon_i$ homoscédastiques
+
+Pour la suite de la vérification des hypothèses, on ajuste un modèle complet sur chacune de nos variables réponses (i.e. un modèle qui fait intervenir toutes les variables explicatives à notre disposition).
 ```{r}
 lm.tot.g<-lm(Galumna~.-pa-prop-totalabund, data=mites)
 lm.tot.pa<-lm(pa~.-Galumna-prop-totalabund, data=mites)
 lm.tot.prop<-lm(prop~.-pa-Galumna-totalabund, data=mites)
 ```
 
-Rédiger pour chaque plot : DIAPO 20 (+linéarité)
-
--   Residuals VS Fitted :
-
--   Normal Q-Q : Ce plot ets utilisé pour determiné sir les residus du model sont distribués suivant une loi normale (les points doivent suivre la ligne pour repondre à cette hypothese) (H5)
-
--   Residuals VS Leverage (H) : Verifier si ya des points
-
-### (H2) : diapo 27 -\> toujours vérifié pour MCO
-
-### (H3) : Homoscédasticité : -\> Plot des résidus : "Scale-Location" (essayer de mettre que ce plot)
-
 ```{r}
+par(mfrow=c(2,2))
 plot(lm.tot.g, which = 3)
 plot(lm.tot.pa, which = 3)
 plot(lm.tot.prop, which = 3)
 ```
+Ajouter les légendes !
 
-Ce plot est utilisé pour checker l'homocédasticité, la ligne doit etre horizontale parce que la variance est constante
+Le type de graphique représenté ci-dessus est utiliser pour évaluer l'homoscédasticité des résidus. Si leur variance est bein constante, alors la courbe rouge doit former une ligne à peu près horizontale. On voit que cette hypothèse est plutôt bien respectée pour les modèles expliquant les variables Galumna et prop. Par contre, l'hypothèse n'est manifestement pas vérifiée pour le modèle expliquant la variable pa.
 
--\> Test de Breush-Pagan Hyp : H0 : Le bruit est homocedastique On retrouve le modele lineaire classique (dont le bruit est homocedastique, $\sigma_i^2=\sigma^2$ pour tout $i$)
+La vérification de cette hypothèse peut également se faire par un test de Breusch-Pagan pour lequel on a $H_0$ : le bruit est homoscédastique, i.e. $\sigma_i^2=\sigma^2$ pour tout $i$.
 
 ```{r}
-bptest(lm.tot.g)
-bptest(lm.tot.pa)
-bptest(lm.tot.prop)
+kable(data.frame("p-value Bruesch-Pagan Test" =
+                   c(bptest(lm.tot.g)$p.value,
+                     bptest(lm.tot.pa)$p.value,
+                     bptest(lm.tot.prop)$p.value),
+                    row.names=c("Galumna~WatrCont+SubsDens",
+                                  "pa~WatrCont+SubsDens",
+                                  "prop~WatrCont+SubsDens")))
 ```
-
-Petites p values donc pas homocedastique
+Ce test confirme notre conclusion d'après les graphiques : on rejette l'hypothèse d'homoscédasticité des résidus pour le modèle expliquant pa, mais on l'accepte pour les deux autres modèles.
 
 ### (H4) : Non autocorrélation des erreurs -\> test de Durbin-Watson : H0 : Les résidus sont non correles
 

@@ -360,7 +360,7 @@ Les VIF sont par définition toujour supérieurs à 1. ON considère que le VIF 
 
 ### 1.2 Transformations sur les données
 
-Transformer les données peut parfois régler les problèmes posés par les hypothèses du modèle linéaire gaussien, et notamment la non-normalité et l'hétéroscédasticité. Cependant, ces transformations présentent des inconvénients :
+Transformer les données peut parfois régler les problèmes posés par les hypothèses du modèle linéaire gaussien, et notamment la non-normalité et l'hétéroscédasticité des résidus. Cependant, ces transformations présentent des inconvénients :
 
 -   elles changent la variable réponse, ce qui peut compliquer l'interprétation
 
@@ -379,9 +379,9 @@ Deux des principales transformations qui permettent de stabiliser la variance po
 ```{r, echo=F}
 asinTransform <- function(p) { asin(sqrt(p)) }
 prop.asin <- asinTransform(mites$prop)
-ggplot(data=data.frame(mites$prop, prop.asin),aes(x=mites$prop, y=prop.asin)) + geom_point() + geom_line(color="darkred")+ labs(title="Transformation Arcsin",x = "prop", y="Arcsin(prop)") + theme(plot.title = element_text(size = 15, color = "darkred", face = "bold"))
+ggplot(data=data.frame(mites$prop, prop.asin),aes(x=mites$prop, y=prop.asin)) + geom_point() + geom_line(color="darkred")+ labs(title="Transformation Arcsin",x = "prop", y="Arcsin(prop)") + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 ```
-On voit ci-dessus que la transformation $arcsin$ ne change pas énormément la variable prop. Regardons ce que cela provoque sur les hypothèses du modèle linéaire gaussien.  
+On voit ci-dessus que la transformation $arcsin$ ne change pas énormément la variable `prop`. Regardons ce que cela provoque sur les hypothèses du modèle linéaire gaussien.  
 Rappelons que nous avions conclu, avant transformation, que l'hypothèse d'homoscédasticité des résidus était vérifiée. Cependant, ce n'était pas le cas pour l'hypothèse de normalité des résidus. Regardons ce qu'il en est après transformation.  
 
 ```{r, echo=F, warning=F}
@@ -399,12 +399,50 @@ cat("p-value Shapiro-Wilk Test :",shapiro.test(lm.prop.asin$residuals)$p.value)
 Une nouvelle fois, on rejette $H_O$ et on conclut que l'hypothèse de normalité des résidus n'est toujours pas vérifiée, même après une transformation $arcsin$.
 
 #### Transformation de Box-Cox   
-
 TO-DO part 1: 
 *transformation BoxCox rappel, application
 *sauts de ligne, noms variables trop longs barplot boxplot
+
+La tranformation de Box & Cox est une transformation non linéaire souvent utilisée pour rendre les données normales. L'objectif est donc d'obtenir une distribution normale des données après transformation, et une variance constante. La transformation s'obtient comme suit :
+$$
+\{ y \in \mathbb{R}^+_*, \lambda \in \mathbb{R} \} : y^*=f(y, \lambda)= 
+\left\{
+\begin{array}{ll}
+\frac{y^{\lambda} - 1}{\lambda} \hspace{2em} (\lambda \neq 0) \\
+\log(y) \hspace{2em} (\lambda = 0)
+\end{array}
+\right.
+$$
+Dans le cas où $\lambda=0$, on retrouve une transformation logarithmique classique. Dans le cas où $\lambda=1$, cela revient à ne pas faire de transformation et de conserver notre variable d'origine à une translation près. Pour un échantillon de $n$ observations, on applique cette même transformation à chaque valeur. Attention, la transformation n'est pas définie pour les valeurs négatives ou nulles de la variable. Dans ce cas de figure, Box & Cox proposent de translater toutes les valeurs : 
+
+$$
+\{ y \in \mathbb{R}^+_*, \lambda_1 \in \mathbb{R}, \lambda_2 \in \mathbb{R} \} : y^*=f(y, \lambda_1, \lambda_2)= 
+\left\{
+\begin{array}{ll}
+\frac{(y+\lambda_2)^{\lambda_1} - 1}{\lambda} \hspace{2em} (\lambda_1 \neq 0) \\
+\log(y+\lambda_2) \hspace{2em} (\lambda_1 = 0)
+\end{array}
+\right.
+$$
+Il faut choisir $\lambda_2$ tel que $\forall y, y+\lambda_2>0$. Dans notre cas, on fixera $\lambda_2=1$ et on utilisera la fonction `MASS::boxcox` pour estimer $\lambda_1$.
+Appliquons maintenant cette transformation à chacune de nos variables réponses, puis re-vérifions les hypothèses du modèle linéaire gaussien, et plus particulièrement l'hypothèse de normalité qui était rejetée pour nos trois modèles et qui est supposée avoir été améliorée par la transformation.
+
+*Variable répnose Galumna : *
+
+```{r,echo=F}
+lm.tot.g.translat <- lm((Galumna+1)~.-pa-prop-totalabund, data=mites)
+bc <- boxcox(lm.tot.g.translat, lambda=seq(-3,2,0.1), plotit = F)
+lambda <- bc$x[which.max(bc$y)]
+cat("Lambda optimal : ", lambda)
+```
+On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-1.8$.
+
 ```{r}
-#boxcox 
+lm.tot.g.bc <- lm(((Galumna+1)^lambda-1)/lambda ~.-pa-prop-totalabund, data=mites)
+par(mfrow=c(1,2))
+plot(lm.tot.g, which = 2)
+plot(lm.tot.g.bc, which = 2)
+shapiro.test(lm.tot.g.bc$residuals)
 ```
 
 

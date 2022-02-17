@@ -23,6 +23,11 @@ library(dplyr)
 library(knitr)
 library(gridExtra)
 library(ggplot2)
+library(mvtnorm)
+library(visdat)
+library(naniar)
+library(UpSetR)
+library(mi)
 ```
 
 ```{=tex}
@@ -158,7 +163,7 @@ L'utilisation d'un modèle linéaire nous impose de traiter la variable pa comme
 mites$pa <- as.integer(mites$pa)
 ```
 
-#### (H1) Linéarité du modèle  
+#### (H1) Linéarité du modèle
 
 Nous allons observer la linéarité du modèle dans un premier temps par représentation graphique. Nous représenterons chaque variable à expliquer en fonction des variables `WatrCont` et `SubsDens` qui sont les deux seules variables quantitatives explicatives.
 
@@ -214,7 +219,7 @@ Au seuil de 5%, on peut conclure que :
 
 À ce stade de l'analyse, on peut déjà conclure qu'il ne sera pas possible d'ajuster un modèle linéaire sur le variable `prop` car l'hypothèse de linéarité n'est pas vérifiée.
 
-#### (H3) Erreurs $\epsilon_i$ homoscédastiques  
+#### (H3) Erreurs $\epsilon_i$ homoscédastiques
 
 Pour la suite de la vérification des hypothèses, on ajuste un modèle complet sur chacune de nos variables réponses (i.e. un modèle qui fait intervenir toutes les variables explicatives à notre disposition).
 
@@ -267,7 +272,7 @@ kable(data.frame(c(dwtest(lm.tot.g)$p.value,
 On observe une p-value inférieure à 0.05 pour les modèles expliquant Galumna et prop. On peut dire qu'au seuil de 5%, on considère que l'hypothèse de non-autocorrélation des erreurs n'est pas respectée pour ces deux modèles. Elle est cependant vérifiée pour le modèle linéaire expliquant pa.\
 À ce stade de l'analyse, nous avons constaté que les hypothèses 1 et 3 ne sont pas vérifiées pour le modèle linéaire expliquant `pa`. L'hypothèse 4 n'est quant à elle pas vérifiée pour les modèles linéaires expliquant Galumna et prop. On pourrait donc s'arrêter et dire qu'il n'est pas possible d'ajuster un modèle lin"aire sur ces trois variables. Par curiosité, nous allons continuer à regarder si les hypothèses suivantes sont vérifiées, bien que l'issue concernant les modèles linéaires reste la même.
 
-#### (H5) Normalité des erreurs $\epsilon_i$  
+#### (H5) Normalité des erreurs $\epsilon_i$
 
 Dans le cadre d'un modèle linéaire, on suppose $\epsilon_i \sim N(0, \sigma^2)$. Une façon de vérifier cette hypothèse est de tracer les QQ-plot de nos modèles linéaires.
 
@@ -295,7 +300,7 @@ kable(data.frame(c(shapiro.test(lm.tot.g$residuals)$p.value,
 
 On observe une très petite p-value pour les trois modèles linéaires. On considère que l'hypothèse de normalité des résidus n'est pas vérifiée pour nos trois modèles.
 
-#### (H7) Non-multicolinéarité des variables explicatives  
+#### (H7) Non-multicolinéarité des variables explicatives
 
 La dernière hypothèse qui doit être vérifiée lorsque l'on ajuste un modèle linéaire est la non-multicolinéarité des variables explicatives. Pour la vérifier, on peut faire de l'analyse bivariée, c'est-à-dire vérifier si les variables semblent être corrélées deux à deux, ou encore calculer les VIF.
 
@@ -370,19 +375,20 @@ Transformer les données peut parfois régler les problèmes posés par les hypo
 
 Dans le cadre de notre étude, nous essaierons des transformations adaptées aux données en proportion pour notre variable prop. Ensuite, nous essaierons une transformation plus générale : celle de Box & Cox.
 
-#### Transformation pour les données en proportion   
+#### Transformation pour les données en proportion
 
-Deux des principales transformations qui permettent de stabiliser la variance pour les données en proportion sont la transformation $logit$ et la transformation $arcsin$. Cependant, pour des données écologiques, la transformation $arcsin$ est souvent préférée car il est courant d'avoir des proportions à 0% ou 100%, ce qui pose problème pour effectuer une transformation $logit$. En effet,  cela ferait donnerait lieu à des valeurs de $-\infty$ pour des proportions égales à 0. On rappelle que c'est notre cas : nous avions remarqué, lors de notre analyse préliminaire des données, que plusieurs observations avaient une valeur de 0 pour la variable prop. Il est donc impossible ici d'utiliser une transformation $logit$ sur les données.
+Deux des principales transformations qui permettent de stabiliser la variance pour les données en proportion sont la transformation $logit$ et la transformation $arcsin$. Cependant, pour des données écologiques, la transformation $arcsin$ est souvent préférée car il est courant d'avoir des proportions à 0% ou 100%, ce qui pose problème pour effectuer une transformation $logit$. En effet, cela ferait donnerait lieu à des valeurs de $-\infty$ pour des proportions égales à 0. On rappelle que c'est notre cas : nous avions remarqué, lors de notre analyse préliminaire des données, que plusieurs observations avaient une valeur de 0 pour la variable prop. Il est donc impossible ici d'utiliser une transformation $logit$ sur les données.
 
-*Transformation Arcsin :*  
+*Transformation Arcsin :*
 
 ```{r, echo=F}
 asinTransform <- function(p) { asin(sqrt(p)) }
 prop.asin <- asinTransform(mites$prop)
 ggplot(data=data.frame(mites$prop, prop.asin),aes(x=mites$prop, y=prop.asin)) + geom_point() + geom_line(color="darkred")+ labs(title="Transformation Arcsin",x = "prop", y="Arcsin(prop)") + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 ```
-On voit ci-dessus que la transformation $arcsin$ ne change pas énormément la variable `prop`. Regardons ce que cela provoque sur les hypothèses du modèle linéaire gaussien.  
-Rappelons que nous avions conclu, avant transformation, que l'hypothèse d'homoscédasticité des résidus était vérifiée. Cependant, ce n'était pas le cas pour l'hypothèse de normalité des résidus. Regardons ce qu'il en est après transformation.  
+
+On voit ci-dessus que la transformation $arcsin$ ne change pas énormément la variable `prop`. Regardons ce que cela provoque sur les hypothèses du modèle linéaire gaussien.\
+Rappelons que nous avions conclu, avant transformation, que l'hypothèse d'homoscédasticité des résidus était vérifiée. Cependant, ce n'était pas le cas pour l'hypothèse de normalité des résidus. Regardons ce qu'il en est après transformation.
 
 ```{r, echo=F, warning=F}
 lm.prop.asin <- lm(prop.asin~.-pa-prop-totalabund-Galumna, data =mites)
@@ -392,19 +398,20 @@ title(main="lm(prop~.)", line=1.4)
 plot(lm.prop.asin, which =2)
 title(main="lm(Arcsin(prop)~.)", line=1.4)
 ```
+
 Graphiquement, la transformation $arcsin$ ne semble pas avoir amélioré la normalité des résidus. Vérifions avec un test de Shapiro-Wilk :
+
 ```{r, echo=F}
 cat("p-value Shapiro-Wilk Test :",shapiro.test(lm.prop.asin$residuals)$p.value)
 ```
+
 Une nouvelle fois, on rejette $H_O$ et on conclut que l'hypothèse de normalité des résidus n'est toujours pas vérifiée, même après une transformation $arcsin$.
 
-#### Transformation de Box-Cox   
-TO-DO part 1: 
-*transformation BoxCox rappel, application
-*sauts de ligne, noms variables trop longs barplot boxplot
+#### Transformation de Box-Cox
 
-La tranformation de Box & Cox est une transformation non linéaire souvent utilisée pour rendre les données normales. L'objectif est donc d'obtenir une distribution normale des données après transformation, et une variance constante. La transformation s'obtient comme suit :
-$$
+TO-DO part 1: *transformation BoxCox rappel, application* sauts de ligne, noms variables trop longs barplot boxplot
+
+La tranformation de Box & Cox est une transformation non linéaire souvent utilisée pour rendre les données normales. L'objectif est donc d'obtenir une distribution normale des données après transformation, et une variance constante. La transformation s'obtient comme suit : $$
 \{ y \in \mathbb{R}^+_*, \lambda \in \mathbb{R} \} : y^*=f(y, \lambda)= 
 \left\{
 \begin{array}{ll}
@@ -412,8 +419,7 @@ $$
 \log(y) \hspace{2em} (\lambda = 0)
 \end{array}
 \right.
-$$
-Dans le cas où $\lambda=0$, on retrouve une transformation logarithmique classique. Dans le cas où $\lambda=1$, cela revient à ne pas faire de transformation et de conserver notre variable d'origine à une translation près. Pour un échantillon de $n$ observations, on applique cette même transformation à chaque valeur. Attention, la transformation n'est pas définie pour les valeurs négatives ou nulles de la variable. Dans ce cas de figure, Box & Cox proposent de translater toutes les valeurs : 
+$$ Dans le cas où $\lambda=0$, on retrouve une transformation logarithmique classique. Dans le cas où $\lambda=1$, cela revient à ne pas faire de transformation et de conserver notre variable d'origine à une translation près. Pour un échantillon de $n$ observations, on applique cette même transformation à chaque valeur. Attention, la transformation n'est pas définie pour les valeurs négatives ou nulles de la variable. Dans ce cas de figure, Box & Cox proposent de translater toutes les valeurs :
 
 $$
 \{ y \in \mathbb{R}^+_*, \lambda_1 \in \mathbb{R}, \lambda_2 \in \mathbb{R} \} : y^*=f(y, \lambda_1, \lambda_2)= 
@@ -423,11 +429,9 @@ $$
 \log(y+\lambda_2) \hspace{2em} (\lambda_1 = 0)
 \end{array}
 \right.
-$$
-Il faut choisir $\lambda_2$ tel que $\forall y, y+\lambda_2>0$. Dans notre cas, on fixera $\lambda_2=1$ et on utilisera la fonction `MASS::boxcox` pour estimer $\lambda_1$.
-Appliquons maintenant cette transformation à chacune de nos variables réponses, puis re-vérifions les hypothèses du modèle linéaire gaussien, et plus particulièrement l'hypothèse de normalité qui était rejetée pour nos trois modèles et qui est supposée avoir été améliorée par la transformation.
+$$ Il faut choisir $\lambda_2$ tel que $\forall y, y+\lambda_2>0$. Dans notre cas, on fixera $\lambda_2=1$ et on utilisera la fonction `MASS::boxcox` pour estimer $\lambda_1$. Appliquons maintenant cette transformation à chacune de nos variables réponses, puis re-vérifions les hypothèses du modèle linéaire gaussien, et plus particulièrement l'hypothèse de normalité qui était rejetée pour nos trois modèles et qui est supposée avoir été améliorée par la transformation.
 
-*Variable répnose Galumna : *
+*Variable répnose Galumna :*
 
 ```{r,echo=F}
 lm.tot.g.translat <- lm((Galumna+1)~.-pa-prop-totalabund, data=mites)
@@ -435,6 +439,7 @@ bc <- boxcox(lm.tot.g.translat, lambda=seq(-3,2,0.1), plotit = F)
 lambda <- bc$x[which.max(bc$y)]
 cat("Lambda optimal : ", lambda)
 ```
+
 On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-1.8$.
 
 ```{r}
@@ -445,9 +450,7 @@ plot(lm.tot.g.bc, which = 2)
 shapiro.test(lm.tot.g.bc$residuals)
 ```
 
-
-**Conclusion :**
-\newpage
+**Conclusion :** \newpage
 
 ## 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa)
 
@@ -899,7 +902,9 @@ library(stats)
 
 ## 1. Simulations scénarios NA
 
-### 1.1 Nous allons simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne et de variance et ajouter des données manquantes sur Y selon :
+#### 1.1 Simulations
+
+Dans le but d'étudier différents scénarios d'imputation de données manquantes, nous commençons par simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne $\mu=\begin{pmatrix} 0 \\ 0 \end{pmatrix}$ et de variance $\begin{pmatrix} 1 & 0.5 \\ 0.5 & 1 \end{pmatrix}$. Pour cela, on utilise la fonction `rmvnorm` du package `mvtnorm`.
 
 ```{r}
 n <- 100
@@ -909,7 +914,11 @@ don <- rmvnorm(n=n, mean = mu, sigma = matcov)
 colnames(don) <- c("X", "Y") 
 ```
 
-#### a. Un mécanisme **MCAR** tel que $P(M=0)=0.35$.
+Ensuite, nous ajoutons des données manquantes sur $Y$ selon plusieurs mécanismes, afin de les comparer par la suite.
+
+-   Mécanisme **MCAR** (**M**issing **C**ompletely **A**t **R**andom)
+
+Le premier mécanisme que nous utilisons est appelé MCAR. Pour celui-ci, les données sont manquantes de façon totalement aléatoire, c'est-à-dire que la probabilité d'abscence est la même pour toutes les observations. Dans notre cas, on choisit $P(M=0)=0.35$.
 
 ```{r}
 set.seed(123)
@@ -923,7 +932,9 @@ don.ismcar <- as.data.frame(don.ismcar) # création du jeu avec 0.35 de NA pour 
 summary(don.ismcar)
 ```
 
-#### b. Un mécanisme **MAR** $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désignale la fonction de répartition d'une loi Normale $\mathcal{N}(0,1)$.
+-   Mécanisme **MAR** (**M**issing **A**t **R**andom)
+
+Ensuite, nous utilisons le mécanisme MAR. Contrairement au précédent, la probabilité d'abscence est liée à une ou plusieurs autres variables observées. Elle ne dépend cependant pas des valeurs manquantes. Ici, on choisit $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désigne la fonction de répartition d'une loi normale $\mathcal{N}(0,1)$.
 
 ```{r}
 set.seed(123)
@@ -941,7 +952,9 @@ don.ismar
 summary(don.ismar)
 ```
 
-#### c. Un mécanisme **MNAR** $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$.
+-   Mécanisme **MNAR** (**M**issing **N**ot **A**t **R**andom)
+
+Enfin, nous utilisons le mécanisme MNAR. Cette fois-ci, les données sont manquantes de façon non aléatoire, c'est-à-dire qu'elles dépendent des variables en question. En effet, la probabilité qu'une valeur soit manquante dépend d'une ou plusieurs données non observées pour les autres variables, ici $X$. Dans notre cas, on a $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$, où $\phi(.)$ désigne toujourds la fonction de répartition d'une loi normale $\mathcal{N}(0,1)$.
 
 ```{r}
 set.seed(123)
@@ -959,4 +972,37 @@ don.ismnar
 summary(don.ismnar)
 ```
 
-### 1.2. " Analyser les avec les outils de description évoqués précédemment"
+Notons que ce dernier type de données manquantes est plus complexe à traiter par la suite.
+
+#### 1.2. Analyse
+
+Maintenant que nous avons ajouté de trois manières différentes des valeurs manquantes sur la variable $Y$, nous allons analyser les jeux de données obtenus. Pour cela, nous commençons par les visualiser en entier. Nous utilisons la fonction `vis_miss` du package `visdat`.
+
+```{r}
+vis_miss(don.ismcar)
+vis_miss(don.ismar)
+vis_miss(don.ismnar)
+```
+
+Nous remarquons que les pourcentages de données manquantes sont équivalents. Cependant, elles ne sont pas réparties de la même façon dans les différents cas.
+
+Nous pouvons regarder plus en détails comment sont reparties les données manquantes de $Y$ selon les valeurs de $X$ pour chacun des jeux de données.
+
+```{r}
+ggplot(data = don.ismcar) +
+aes(x = X, y = Y) + geom_miss_point()
+
+ggplot(data = don.ismar) +
+aes(x = X, y = Y) + geom_miss_point()
+
+ggplot(data = don.ismnar) +
+aes(x = X, y = Y) + geom_miss_point()
+```
+
+Nous remarquons que pour les deux dernières configurations, les valeurs manquantes sont plutôt centrées autour de $X \simeq 0.75$, tandis que dans le premier cas, il en existe également pour des valeurs beaucoup plus faibles de $X$.
+
+***NOTE à enlever** : dans les "outils" dont elle parle dans son diapo, la moitié on ne peut pas les utiliser car on a que 2 var et qu'une qui a des valeurs manquantes : par ex gg_miss_var sert à rien avec 2 var car compare juste les pourcentages de Na et gg_miss_upset nécessite au moins deux var avec des Na.*
+
+#### 1.3 Estimation de la moyenne de $Y$ et de l'intervalle de confiance associé
+
+#### 

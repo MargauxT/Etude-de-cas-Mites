@@ -1013,13 +1013,9 @@ Nous remarquons que pour les deux dernières configurations, les valeurs manquan
 
 ```{r}
 install.packages("mice")
-install.packages("R6")
-install.packages("devtools")
-devtools::install_github(repo = "amices/mice")
-library(mice)
-?ampute
+library("mice")
 ```
-J'ARRIVE PAS A INSTALLER LE PACKAGE "MICE" BORDEEEEEL J'AI CHERCHE PARTOUT SUR INTERNET !!!!!!
+J'ARRIVE PAS A INSTALLER LE PACKAGE "MICE" BORDEEEEEL J'AI CHERCHE PARTOUT SUR INTERNET !!!!!! jai reussi hihi 2 jours apres
 
 ### 1. **Titre**
 
@@ -1028,24 +1024,35 @@ Nous allons dans un premier temps générer 10% de données manquantes sur notre
 -   Mécanisme **MCAR** (**M**issing **C**ompletely **A**t **R**andom)
 
 ```{r}
-
+?ampute
+amp.mcar = ampute(mites, prop = 0.10, mech = "MCAR")
 ```
 
 -   Mécanisme **MAR** (**M**issing **A**t **R**andom)
 
 ```{r}
-
+amp.mar = ampute(mites, prop = 0.10, mech = "MAR")
 ```
 
 -   Mécanisme **MNAR** (**M**issing **N**ot **A**t **R**andom)
 ```{r}
-
+amp.mnar = ampute(mites, prop = 0.10, mech = "MNAR")
 ```
+
+Dire quelque chose ??
 
 ###. 2. Analyse exploratoire
 
 Explorer les 3 dispositifs de données manquantes créés.
 On pourra utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée, `CramerV` du package `DescTools` pour l'analyse bivariée, `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle
 
+```{r}
+install.packages("VIM")
+library("VIM")
+?aggr
+```
 
+```{r}
+
+```
 

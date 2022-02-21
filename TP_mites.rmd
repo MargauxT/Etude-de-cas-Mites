@@ -437,28 +437,122 @@ $$ Il faut choisir $\lambda_2$ tel que $\forall y, y+\lambda_2>0$. Dans notre ca
 lm.tot.g.translat <- lm((Galumna+1)~.-pa-prop-totalabund, data=mites)
 bc <- boxcox(lm.tot.g.translat, lambda=seq(-3,2,0.1), plotit = F)
 lambda <- bc$x[which.max(bc$y)]
-cat("Lambda optimal : ", lambda)
+cat("Lambda_1 optimal : ", lambda)
 ```
 
 On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-1.8$.
 
-```{r}
+```{r, echo=F, warning=F}
 lm.tot.g.bc <- lm(((Galumna+1)^lambda-1)/lambda ~.-pa-prop-totalabund, data=mites)
 par(mfrow=c(1,2))
 plot(lm.tot.g, which = 2)
+title(main="lm(Galumna~.)", line=1.4)
 plot(lm.tot.g.bc, which = 2)
-shapiro.test(lm.tot.g.bc$residuals)
+title(main="lm(BoxCox(Galumna)~.)", line=1.4)
+cat("p-value pour le test de Shapiro-Wilk : ",shapiro.test(lm.tot.g.bc$residuals)$p.value)
 ```
 
+<<<<<<< Updated upstream
 **Conclusion :** \newpage
+=======
+Graphiquement, la transformation de Box & Cox ne semble pas avoir amélioré la normalité des résidus. Pour le test de Shapiro-Wilk, on obtient une p-value inférieure à 5% donc on rejette l'hypothèse de normalité des résidus. La transformation de Box & Cox pour la variable Galumna n'a pas réglé le problème des hypothèses du modèle linéaire gaussien non vérifiées.
 
-## 2. GLM Régression logistique binaire sur la variable réponse Occurrence (pa)
+*Variable répnose pa :*
+
+```{r,echo=F}
+lm.tot.pa.translat <- lm((pa+1)~.-Galumna-prop-totalabund, data=mites)
+bc <- boxcox(lm.tot.pa.translat, lambda=seq(-5,2,0.1), plotit = F)
+lambda <- bc$x[which.max(bc$y)]
+cat("Lambda_1 optimal : ", lambda)
+```
+
+On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-4.5$.
+
+```{r, echo=F, warning=F}
+lm.tot.pa.bc <- lm(((Galumna+1)^lambda-1)/lambda ~.-pa-prop-totalabund, data=mites)
+par(mfrow=c(1,2))
+plot(lm.tot.pa, which = 2)
+title(main="lm(pa~.)", line=1.4)
+plot(lm.tot.pa.bc, which = 2)
+title(main="lm(BoxCox(pa)~.)", line=1.4)
+cat("p-value pour le test de Shapiro-Wilk : ",shapiro.test(lm.tot.pa.bc$residuals)$p.value)
+```
+
+Une nouvelle fois, graphiquement la transformation ne semble pas avoir amélioré la normalité des résidus. Pour le test de Shapiro-Wilk, on obtient une p-value un tout petit peu supérieure à 5%. On considère que la p-value n'est pas assez élevée pour conclure à une normalité des résidus.
+
+*Variable répnose prop :*
+
+```{r,echo=F}
+lm.tot.prop.translat <- lm((prop+1)~.-pa-Galumna-totalabund, data=mites)
+bc <- boxcox(lm.tot.prop.translat, lambda=seq(-200,0,0.1), plotit = F)
+lambda <- bc$x[which.max(bc$y)]
+cat("Lambda_1 optimal : ", lambda)
+```
+
+On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-147$. Il s'agit d'une valeur de $\lambda_1$ très élevée comparée aux valeurs précédents, mais c'est celle qui maximise la log-vraisemblance de ??????.
+
+```{r, echo=F, warning=F}
+lm.tot.prop.bc <- lm(((prop+1)^lambda-1)/lambda ~.-pa-Galumna-totalabund, data=mites)
+par(mfrow=c(1,2))
+plot(lm.tot.prop, which = 2)
+title(main="lm(prop~.)", line=1.4)
+plot(lm.tot.prop.bc, which = 2)
+title(main="lm(BoxCox(prop)~.)", line=1.4)
+cat("p-value pour le test de Shapiro-Wilk : ",shapiro.test(lm.tot.g.bc$residuals)$p.value)
+```
+
+Graphiquement, la transformation semble avoir légèrement amélioré la normalité des résidus (ce n'est pas la même échelle pour $y$ pour les deux graphiques). Cependant, d'après le test de Shapiro-Wilk, on rejette l'hypothèse de normalité.
+
+**Conclusion :**
+
+Dans cette première partie de l'analyse du jeu de données "mites", nous avons tenté d'ajuster un modèle linéaire gaussien sur trois variables explicatives. Cependant, l'une des difficultés lorsque l'on ajuste un modèle linéaire est qu'il doit vérifier un certain nombre d'hypothèses. Dans notre cas, il y avait toujours au moins une hypothèses qui n'était pas vérifiée. Nous avons donc mis en place des transformations de données, adaptées à nos variables, afin que le modèle vérifie les hypothèses. Malheureusement, ces transformations n'ont pas permis de valider les hypothèses, en particulier celle de normalité des résidus.\
+Dans la pratique, il existe de nombreuses distributions de probabilité pour décrire les données : Poisson, Bernouilli, Binomiale... Nous allons donc essayer une autre approche pour ajuster un modèle sur nos données : les modèles linéaires généralisés.\
+Un modèle linéaire généralisé a quatre composantes :
+
+1.  les variables réponses $Y_1, Y_2,…, Y_n$ sont supposées suivre la même distrubtion appartenant à la **famille exponentielle**
+
+2.  un vecteur de paramètres $\beta$ à estimer et des variables explicatives $X=[1,x^ 1,…,x^p]$
+
+3.  une fonction de lien $g$ telle que\
+    $g(\mu_i) = x_i^T\beta$ avec $E(Y_i)=\mu_i$
+
+4.  une fonction de variance $V(\mu_i)$ qui décrit comment la variance $Var(Y_i)$ dépend de l'espérance $E(Y_i)=\mu_i$: $$Var(Y_i)=\phi V(\mu_i)$$ où $\phi$ est un paramètre de dispersion ou facteur d'échelle (constante) et $V$ une fonction de variance.\
+    Finalement, le modèle linéaire gaussien est un cas particulier du modèle linéaire généralisé où l'on a $Y=X\beta + \epsilon$ avec les $\epsilon_i$ i.i.d. suivant $N(0,\sigma^2)$. Dans ce cas, $\mu_i=E(Y_i)=x_i^T\beta$ et la fonction de lien $g$ est la fonction identité $g(\mu_i)=\mu_i=x_i^T\beta$.
+
+Sous R, la fonction utilisée pour les modèles linéaires généralisés est `glm`.
+
+Nous allons donc essayer des modèles linéaires généralisés avec différentes distributions et fonctions de lien pour nos données :
+
+-   une régression logistique binaire sur la variable `pa`
+
+-   une régression logistique sur la variable `prop`
+
+-   une régression de Poisson sur la variable `Galumna`
+
+\newpage
+>>>>>>> Stashed changes
+
+## 2. GLM Régression logistique binaire sur la variable d'occurrence (pa)
 
 **Objectif** : expliquer l'occurence `pa`, déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
 
+La variable binaire est un type de variable commun dans les données en écologie ou en santé : on observe un phénomène $Y$ ou son absence. Dans notre cas, on veut savoir si l'occurence de mites Galumna varie en fonction de l'environnement.
+
+Ici, le modèle linéaire généraliséest composé de :
+
+1.  la variable réponsé $Y_i, i=1,...,n$ qui suit une distribution de Bernouilli de paramètre $\pi_i$
+
+2.  un vecteur de paramètre $\beta$ à estimer et des variables explictives $X=[1,x^1,…,x^n]$
+
+3.  la fonction de lien $g$ nommée $logit$. Elle est définie de $[0,1]$ sur $\mathbb{R}$ par $g(\pi)=ln(\frac{\pi}{1-\pi})$, soit $\pi_i=g^{-1}(x_i^T\beta)=\frac{\exp(x_i^T\beta)}{1+\exp(x_i^T\beta)}$
+
+Ainsi, on suppose ici que $y_i$ suit une loi de Bernouilli $B(1,\frac{\exp(x_i^T\beta)}{1+\exp(x_i^T\beta)})$ .
+
+Sous R, on indique en paramètre de la fonction `family="binomial"` et il n'est pas nécessaire de préciser la fonction de lien car par défaut, pour la famille binomiale, la fonction de lien est $logit$.
+
 #### 1. Recherche du meilleur modèle
 
-```{r}
+```{r, echo=F}
 mites$pa <- as.factor(mites$pa)
 ```
 
@@ -466,31 +560,32 @@ mites$pa <- as.factor(mites$pa)
 
 Pour débuter, on construit le modèle complet (avec toutes les variables explicatives) pour déterminer lesquelles sont significatives :
 
-```{r}
+```{r, echo=F}
 glm.tot.pa <- glm(pa~WatrCont + SubsDens + Topo + Shrub + Substrate, data=mites, family = "binomial")
 summary(glm.tot.pa)
 ```
-
-D'après cette sortie, les variables significatives semblent être WatrCont, SubsDens et Topo.
+La sortie du `summary` nous permet de voir quelles variables sont significatives pour le test de Wald. Celui-ci permet de tester la nullité d'un coefficient : $H_0 : \beta_j=0$. Sous $H_0$, on a :
+$$\sqrt{n}(I(\hat{\beta}))_{jj}^{\frac{1}{2}}(\hat{\beta}_j)=\frac{\hat{\beta}_j}{\sqrt{\hat{Var}(\hat{\beta}_j)}}\sim N(0,1)$$
+Ici, les variables significatives semblent être WatrCont, SubsDens et Topo.
 
 On peut alors tester un modèle uniquement avec celles-ci :
 
-```{r}
+```{r, echo=F}
 glm.best.pa <- glm(pa~WatrCont + SubsDens + Topo, data=mites, family = "binomial")
 summary(glm.best.pa)
 ```
 
 Ce modèle semble mieux car les variables sont toutes vraiment significatives.
 
-Afin de s'assurer de la significativité du retrait des autres variables, nous pouvons réaliser un test de déviance. **DEFINIR**
+Afin de s'assurer de la significativité du retrait des autres variables, nous pouvons réaliser un test de modèles emboîtés. **DÉFINIR**
 
-```{r}
+```{r, echo=F}
 anova(glm.best.pa, glm.tot.pa, test = 'Chisq')
 ```
 
 La grande p-value nous indique que les variables présentes dans le plus grand modèle mais pas dans les plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critère BIC (critère explicatif) pour chacun des deux modèles.
 
-```{r}
+```{r, echo=F}
 kable(data.frame(BIC(glm.best.pa),BIC(glm.tot.pa)), col.names = c("Petit modèle", "Grand modèle"), caption = "BIC")
 ```
 
@@ -500,7 +595,7 @@ Nous pouvons comparer ce modèle obtenu avec celui déterminé par une sélectio
 
 -   **Méthode de sélection automatique**
 
-Nous effectuons une sélection stepwise descendante, toujours avec le critère BIC. Celle-ci part du plus gros modèle et tente d'enlever les varaibles les moins significtives afin de retrouver le meilleur modèle.
+Nous effectuons une sélection stepwise descendante, toujours avec le critère BIC (option `k=log(n)` dans la fonction `step`. Celle-ci part du plus gros modèle et tente d'enlever les varaibles les moins significtives afin de retrouver le meilleur modèle.
 
 ```{r}
 n <- nrow(mites)
@@ -516,10 +611,12 @@ $$logit(\hat{Pa})= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock$
 
 #### 2. Interprétation des coefficients
 
-La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio. Ce dernier est équivalent à $\exp(\beta_j)$ pour la variable $j$.
-
-```{r}
-exp(glm.best.pa$coefficients)
+La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio. Il est défini comme le rapport des probabilités d'apparition de l'évènement $Y=1$ contre $Y=0$. L'odds est la quantité $\frac{\pi_i}{1-\pi_i}$. Dans le modèle logistique, on définit plus précisément l'odds par :
+$$\frac{\pi_i}{1-\pi_i}=\exp(x_i^T\beta)=\exp(\beta_0+\beta_1x^i_1+...+\beta_px_i^p)$$ et si on considère deux individus $i_1$ et $i_2$ dont la valeur des covariables ne diffère que de 1 pour la $j$-ième covariable, soit $x_{i_1}^j-x_{i_2}^j=1$, on calcule l'odd-ratio avec :
+$$\frac{\pi_{i_1}}{1-\pi_{i_1}}/\frac{\pi_{i_2}}{1-\pi_{i_2}} = \exp(\beta_j)$$
+On dira alors qu'une augmentation de 1 de la variable $j$ entraîne une multiplication de l'odds-ratio de $\exp(\beta_j)$. 
+```{r, echo=F}
+cat("Odds-ratios : ",exp(glm.best.pa$coefficients))
 ```
 
 Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (WatrCont), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis ce que pour une unité de densité du substrat (SubsDens) en plus, le risque est plus élevé de $18$%. Enfin, lorsque de la topographie est de type Hummock, il y a énroméménet de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
@@ -534,7 +631,7 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
 
     Dans un premier temps, nous pouvons nous intéresser aux points leviers, c'est à dire les points qui influencent fortement sur leur propre estimation.
 
-    ```{r}
+    ```{r, echo=F}
     p <- length(glm.best.pa$coefficients)
     n <- nrow(mites)
     plot(influence(glm.best.pa)$hat, type="h", ylab="h_ii")
@@ -547,7 +644,7 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
 
     Regardons ensuite les points influents sur le modèle. Ce sont des points importants car leur présence joue beaucoup sur l'estimation des coefficients. Pour les déterminer, on peut représenter leur distance de Cook, c'est à dire la distance entre le vecteur des coefficients estimés avec toutes les observations et celui estimé avec toutes les observations sauf une.
 
-    ```{r}
+    ```{r, echo=F}
     plot(cooks.distance(glm.best.pa), type="h", ylab="Distance de Cook")
     ```
 
@@ -557,7 +654,7 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
 
     Afin de tester la qualité de l'ajustement de notre modèle, on peut utiliser le test de Pearson basé sur les résidus de Pearson. **DÉFINIR**
 
-    ```{r}
+    ```{r, echo=F}
     res <- sum(residuals(glm.best.pa, type = "pearson")^2)
     ddl <- df.residual(glm.best.pa)
     pvalue <- 1 - pchisq(res,ddl)
@@ -566,7 +663,7 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
 
     La p-value étant très grande, on admet que le modèle est très bien adapté aux données. On peut tout de même visualiser ces résidus de Pearson.
 
-    ```{r}
+    ```{r, echo=F}
     res2 <- residuals(glm.best.pa, type="pearson")
     plot(res2, ylab="Residuals")
     abline(h=c(-2,2), col=2)
@@ -578,7 +675,7 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
 
     Par ailleurs, on peut également effectuer un test d'Hosmer-Lemeshow pour évaluer la pertinence du modèle. **DÉFINIR**
 
-    ```{r}
+    ```{r, echo=F}
     hoslem.test(mites$pa, fitted(glm.best.pa))
     ```
 
@@ -590,7 +687,7 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
 
 Afin d'évaluer le pouvoir explicatif de notre modèle, on peut calculer son Pseudo-$R^2$. Il en existe plusieurs. Ici, nous allons déterminer celui de McFadden (1973) correspondant au quotient entre la différence des déviances nulles et résiduelles et la déviance nulle.
 
-```{r}
+```{r, echo=F}
 pseudoR2 <- ((glm.best.pa$null.deviance-glm.best.pa$deviance)/glm.best.pa$null.deviance)
 pseudoR2
 ```
@@ -601,7 +698,7 @@ D'après ce résultat, on en conclut que notre modèle explique plus de $62.2$% 
 
 Pour évaluer le pouvoir de classification de notre modèle, nous allons juger ses prédictions grâce à une courbe ROC. Afin de ne pas prédire sur des individus ayant servis à la construction du modèle, nous effectuons une validation croisée. En effet, pour chaque individu i, nous estimons le modèle sans cet individu puis nous prédisons la valeur de pa pour celui-ci. Nous obtenons alors les prédictions de pa pour tous les individus et nous pouvons tracer la courbe ROC.
 
-```{r}
+```{r, echo=F}
 pred <- 1:n
 for (i in 1:n){
   # On estime le modèle sans i (on l'enlève lorsqu'on estime le modèle)
@@ -617,7 +714,7 @@ plot(roc)
 
 Cette courbe résume le taux de vrais positifs en fonction du taux de faux positifs. Elle est d'autant meilleure qu'elle s'éloigne de la diagonale. Ici, nous avons une courbe largement au dessus de la diagonale. Nous pouvons d'ailleurs calculer son aire sous la courbe (AUC).
 
-```{r}
+```{r, echo=F}
 perf <- performance(pr, "auc")
 perf@y.values[[1]]
 ```
@@ -626,14 +723,14 @@ L'aire sous la courbe est proche de 1 : le pouvoir prédictif de notre modèle e
 
 Enfin, nous pouvons résumer les bonnes et mauvaises prédictions de notre modèle grâce à une matrice de confusion. Pour cela, il est intéressant de déterminer en amont le seuil à partir duquel on admet la présence de mites. On trace alors la courbe du taux d'erreur en fonction des différents seuils.
 
-```{r}
+```{r, echo=F}
 res.err <- performance(pr,measure = "err")
 plot(res.err)
 ```
 
 Nous remarquons que le taux d'erreur le plus faible est pour un seuil de 0.5. C'est alors le seuil que nous allons choisir pour étblir notre matrice de confusion.
 
-```{r}
+```{r, echo=F}
 table(pred>0.5, mites$pa)
 ```
 
@@ -643,7 +740,7 @@ Ainsi, nous en déduisons que le modèle expliquant l'occurrence de mites grâce
 
 \newpage
 
-## 3. GLM Régression Logistique sur les données agrégées
+## 3. GLM Régression Logistique sur les données agrégées (prop)
 
 **Objectif** : expliquer la fréquence relative `prop`, déterminer le meilleur modèle pour cette variable réponse, interpréter les coefficients, puis évaluer l'ajustement de ce modèle.
 
@@ -785,7 +882,7 @@ Ainsi, nous en déduisons que le modèle expliquant la proportion de mites Galum
 
 \newpage
 
-## 4. GLM Régression Poisson sur Abondance (Galumna) :
+## 4. GLM Régression Poisson sur la variable d'abondance (Galumna)
 
 **Objectif** : modéliser l'abondance de l'espèce Galumna en fonction des caractéristiques du substrat (son contenu en eau `WatrCont` et sa densité `SubsDens`) et, si nécessaire, des autres variables environnementales.
 

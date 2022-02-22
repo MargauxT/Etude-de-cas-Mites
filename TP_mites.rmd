@@ -31,10 +31,13 @@ library(dplyr)
 library(knitr)
 library(gridExtra)
 library(ggplot2)
+library(parallel)
+library(stats)
 library(mvtnorm)
 library(visdat)
 library(naniar)
 library(UpSetR)
+library(mi)
 library(bookdown)
 library(mice)
 library(VIM)
@@ -1058,14 +1061,7 @@ Le but initial de notre étude était de décrire le jeu de données sur les mit
 
 # Données manquantes
 
-```{r}
-set.seed(123)
-library(parallel)
-library(mvtnorm)
-library(stats)
-```
-
-## Simulations scénarios NA
+## 1. Simulations scénarios NA
 
 #### Simulations
 
@@ -1151,7 +1147,7 @@ vis_miss(don.ismnar)
 
 Nous remarquons que les pourcentages de données manquantes sont équivalents. Cependant, elles ne sont pas réparties de la même façon dans les différents cas.
 
-Nous pouvons regarder plus en détails comment sont reparties les données manquantes de $Y$ selon les valeurs de $X$ pour chacun des jeux de données.
+Nous pouvons alors regarder plus en détails comment sont reparties les données manquantes de $Y$ selon les valeurs de $X$ pour chacun des jeux de données.
 
 ```{r}
 ggplot(data = don.ismcar) +
@@ -1164,11 +1160,212 @@ ggplot(data = don.ismnar) +
 aes(x = X, y = Y) + geom_miss_point()
 ```
 
-Nous remarquons que pour les deux dernières configurations, les valeurs manquantes sont plutôt centrées autour de $X \simeq 0.75$, tandis que dans le premier cas, il en existe également pour des valeurs beaucoup plus faibles de $X$.
+Nous remarquons que pour la deuxième configuration, les valeurs manquantes sont plutôt associées à un $X$ positif, tandis que dans les deux autres cas, elles sont reparties dans les négatifs également.
 
 ***NOTE à enlever** : dans les "outils" dont elle parle dans son diapo, la moitié on ne peut pas les utiliser car on a que 2 var et qu'une qui a des valeurs manquantes : par ex gg_miss_var sert à rien avec 2 var car compare juste les pourcentages de Na et gg_miss_upset nécessite au moins deux var avec des Na.* -\> elle est relou wesh
 
 #### Estimation de la moyenne de $Y$ et de l'intervalle de confiance associé
+
+Nous voulons à présent étudier nos jeux de données et déterminer la moyenne de la variable $Y$, ainsi que l'intervalle de confiance associé pour chacun d'entre eux. Nous pourrons ensuite comparer les résultats obtenus.
+
+Pour ce faire, plusieurs méthodes seront utilisées. En effet, dans un premier temps, nous allons utiliser uniquement les données non manquantes de la variable. Puis, nous testerons différentes méthodes d'imputation pour les valeurs non rensignées.
+
+-   Cas complets
+
+Comme évoqué, nous débutons par une analyse des cas complets. Cela consiste à supprimer les observations pour lesquelles la valeur de $Y$ est manquante. C'est la méthode la plus simple. Cependant, elle est déconseillée lorsque le nombre de données manquantes est trop élevé car nous perdrions trop d'informations. De plus, pour les jeux de données où les valeurs manquantes ne sont pas type MCAR, retirer des observations va induire un biais dans l'analyse puisque l'ensemble des observations pour lesquelles des données sont manquantes n'est pas forcément représentatif de l'échantillon initial.
+
+Dans notre cas, nous avons environ $30$% de Na dans nos différents jeux de données. De plus, deux d'entre eux comportent des valeurs manquantes qui ne sont pas de type MCAR. Il ne serait donc pas judicieux de procéder ainsi. Cependant, l'objectif ici étant de comparer plusieurs méthodes, nous allons tout de même le réaliser. Pour cela, nous utilisons la fonction `na.omit`.
+
+```{r}
+don.ismcar.cc <- na.omit(don.ismcar)
+don.ismar.cc <- na.omit(don.ismar)
+don.ismnar.cc <- na.omit(don.ismnar)
+```
+
+Nous pouvons regarder la dimension de nos nouveaux jeux de données "complets".
+
+```{r}
+dim(don.ismcar.cc)
+dim(don.ismar.cc)
+dim(don.ismnar.cc)
+```
+
+La dimension initiale était de $100$ observations. Après suppression, nous en gardons nettement moins. Rappelons que les lignes retirées ne sont pas les mêmes pour chacun des jeux de données car les valeurs manquantes ne se situaient pas au même endroit.
+
+Nous pouvons à présent calculer la moyenne de $Y$. Pour cela, nous réalisons une régression simple sur la variable et nous récupérons l'intercept.
+
+```{r}
+lm.mcar.cc <- lm(don.ismcar.cc$Y~1)
+lm.mar.cc <- lm(don.ismar.cc$Y~1)
+lm.mnar.cc <- lm(don.ismnar.cc$Y~1)
+
+mean.mcar.cc <- lm.mcar.cc$coefficients
+mean.mar.cc <- lm.mar.cc$coefficients
+mean.mnar.cc <- lm.mnar.cc$coefficients
+
+kable(data.frame(mean.mcar.cc,mean.mar.cc,mean.mnar.cc), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+```
+
+On remarque que les moyennes obtenues sont très différentes selon les jeux de données. Seule la première se rapproche de $0$, la vraie valeur.
+
+Regardons maintenant les intervalles de confiance associés :
+
+```{r}
+IC <- rbind(data.frame(confint(lm.mcar.cc)), data.frame(confint(lm.mar.cc)), data.frame(confint(lm.mnar.cc)))
+
+rownames(IC) <- c("MCAR", "MAR", "MNAR")
+colnames(IC) <- c("2.5%", "97.5%")
+
+IC
+```
+
+Nous remarquons ici aussi que le premier jeu de données, correspondant au type MCAR, est le seul a avoir de "bons" résultats. En effet, contrairement aux autres, le $0$ est présent dans l'intervalle. Cela confirme ce que nous avions évoqué précédemment sur le biais que provoque cette méthode lorsque les données manquantes ne sont pas de type MCAR.
+
+-   Imputation simple par la moyenne
+
+Pour éviter de supprimer les obsevartions où se trouvent des données manquantes, on peut décider d'imputer des valeurs à ces endroits. Plusieurs méthodes existent pour déterminer la valeur à indiquer. La première que nous testons consiste à remplacer le Na par la moyenne de la variable. Toutes les données manquantes seront donc "remplacées" par la même valeur.
+
+Pour le calcul de la moyenne de la variable ensuite, nous obtenons forcément les mêmes résultats qu'auparavant.
+
+```{r}
+don.ismcar.im <- na.aggregate(don.ismcar, FUN = mean)
+don.ismar.im <- na.aggregate(don.ismar, FUN = mean)
+don.ismnar.im <- na.aggregate(don.ismnar, FUN = mean)
+
+lm.mcar.im <- lm(don.ismcar.im$Y~1)
+lm.mar.im <- lm(don.ismar.im$Y~1)
+lm.mnar.im <- lm(don.ismnar.im$Y~1)
+
+mean.mcar.im <- lm.mcar.im$coefficients
+mean.mar.im <- lm.mar.im$coefficients
+mean.mnar.im <- lm.mnar.im$coefficients
+
+kable(data.frame(mean.mcar.im,mean.mar.im,mean.mnar.im), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+```
+
+Regardons ce que donnent les intervalles de confiance associés :
+
+```{r}
+IC <- rbind(data.frame(confint(lm.mcar.im)), data.frame(confint(lm.mar.im)), data.frame(confint(lm.mnar.im)))
+
+rownames(IC) <- c("MCAR", "MAR", "MNAR")
+colnames(IC) <- c("2.5%", "97.5%")
+
+IC
+```
+
+Les intervalles de confiance ont changés. Il y a toujours uniquement dans le premier cas (MCAR) que $0$ se situe dans l'intervalle. De plus, les autres s'éloignent de cette valeur. Cependant, leur longueur a diminué. Ainsi, ils offrent plus de précision dans leur estimation.
+
+-   Imputation simple par régression stochastique
+
+La deuxième méthode d'imputation que nous testons est l'imputation par régression stochastique. Celle-ci consiste à "remplacer" une donnée non observée par une valeur prédite obtenue en régressant la variable manquante sur d'autres variables, à laquelle on ajoute une valeur résiduelle aléatoire. Cela permet de préserver les relations entre les variables, mais aussi d'avoir l'avantage d'une composante aléatoire.
+
+Concrètement, pour réaliser cette méthode, il nous faut tirer aléatoirement une valeur autour de celle prédite par le modèle de régression. Pour cela, nous utilisons la fonction `mice` avec la méthode `norm.nob`.
+
+```{r}
+don.ismcar.irs <- complete(mice(don.ismcar, method = "norm.nob", m = 1, print = FALSE))
+don.ismar.irs <- complete(mice(don.ismar, method = "norm.nob", m = 1, print = FALSE))
+don.ismnar.irs <- complete(mice(don.ismnar, method = "norm.nob", m = 1, print = FALSE))
+
+lm.mcar.irs <- lm(don.ismcar.irs$Y~1)
+lm.mar.irs <- lm(don.ismar.irs$Y~1)
+lm.mnar.irs <- lm(don.ismnar.irs$Y~1)
+
+mean.mcar.irs <- lm.mcar.irs$coefficients
+mean.mar.irs <- lm.mar.irs$coefficients
+mean.mnar.irs <- lm.mnar.irs$coefficients
+
+kable(data.frame(mean.mcar.irs,mean.mar.irs,mean.mnar.irs), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+```
+
+Cette fois-ci, c'est le deuxième cas (MAR) qui obtient le meilleur résultat car la moyenne obetnue est très proche de celle attendue.
+
+Nous pouvons regarder ce que donnent les intervalles de confiance associés :
+
+```{r}
+IC <- rbind(data.frame(confint(lm.mcar.irs)), data.frame(confint(lm.mar.irs)), data.frame(confint(lm.mnar.irs)))
+
+rownames(IC) <- c("MCAR", "MAR", "MNAR")
+colnames(IC) <- c("2.5%", "97.5%")
+
+IC
+```
+
+Les intervalles de confiance obtenues avec cette méthode d'imputation semblent meilleurs que ceux des méthodes précédemment testées. En effet, les deux premiers contiennent $0$ et le troisième s'en rapproche. Cependant, leur longueur est plus grande que pour l'imputation avec la moyenne. Ils sont donc moins précis.
+
+-   20 imputations simples par régression stochastique
+
+La méthode précédente ayant des résultats encourageants, nous souhaitons poursuivre son étude. En effet, une valeur unique ne pouvant pas refléter l'incertitude sur la prédiction, nous allons tester de renouveller vingt fois l'imputation.
+
+```{r}
+don.ismcar.irs20 <- complete(mice(don.ismcar, method = "norm.nob", m = 20, print = FALSE))
+don.ismar.irs20 <- complete(mice(don.ismar, method = "norm.nob", m = 20, print = FALSE))
+don.ismnar.irs20 <- complete(mice(don.ismnar, method = "norm.nob", m = 20, print = FALSE))
+
+lm.mcar.irs20 <- lm(don.ismcar.irs20$Y~1)
+lm.mar.irs20 <- lm(don.ismar.irs20$Y~1)
+lm.mnar.irs20 <- lm(don.ismnar.irs20$Y~1)
+
+mean.mcar.irs20 <- lm.mcar.irs20$coefficients
+mean.mar.irs20 <- lm.mar.irs20$coefficients
+mean.mnar.irs20 <- lm.mnar.irs20$coefficients
+
+kable(data.frame(mean.mcar.irs20,mean.mar.irs20,mean.mnar.irs20), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+```
+
+Une nouvelle fois, le mécanisme MAR obtient le meilleur résultat. Nous remarquons que les valeurs sont légèrement plus éloignées de $0$. Cependant, elles incorporent l'incertidude de l'imputation des données manquantes.
+
+Regardons les intervalles de confiance associés :
+
+```{r}
+IC <- rbind(data.frame(confint(lm.mcar.irs20)), data.frame(confint(lm.mar.irs20)), data.frame(confint(lm.mnar.irs20)))
+
+rownames(IC) <- c("MCAR", "MAR", "MNAR")
+colnames(IC) <- c("2.5%", "97.5%")
+
+IC
+```
+
+Les conclusions sont les mêmes que pour les moyennes. En effet, les intervalles sont légèrement plus grands mais sont sensiblement répartis de la même façon par rapport à $0$.
+
+***NOTE** : pas sûre de moi pour la régression multiple, je sais pas si mice gère directement les 20 imputations ou si on doit faire qqch après.*
+
+-   Imputation multiple par régression
+
+Enfin, nous allons tester de réaliser une nouvelle fois vingt imputations, mais cette fois-ci par régression linéaire.
+
+```{r}
+don.ismcar.ir20 <- complete(mice(don.ismcar, method = "norm", m = 20, print = FALSE))
+don.ismar.ir20 <- complete(mice(don.ismar, method = "norm", m = 20, print = FALSE))
+don.ismnar.ir20 <- complete(mice(don.ismnar, method = "norm", m = 20, print = FALSE))
+
+lm.mcar.ir20 <- lm(don.ismcar.ir20$Y~1)
+lm.mar.ir20 <- lm(don.ismar.ir20$Y~1)
+lm.mnar.ir20 <- lm(don.ismnar.ir20$Y~1)
+
+mean.mcar.ir20 <- lm.mcar.ir20$coefficients
+mean.mar.ir20 <- lm.mar.ir20$coefficients
+mean.mnar.ir20 <- lm.mnar.ir20$coefficients
+
+kable(data.frame(mean.mcar.ir20,mean.mar.ir20,mean.mnar.ir20), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+```
+
+C'est encore pour le deuxième jeu de données que lon obtient le meilleur résultat. L'imputation par régression semble donc mieux adaptée pour celui-ci.
+
+Regardons si cela ce confirme pour les intervalles de confiance associés aux moyennes :
+
+```{r}
+IC <- rbind(data.frame(confint(lm.mcar.ir20)), data.frame(confint(lm.mar.ir20)), data.frame(confint(lm.mnar.ir20)))
+
+rownames(IC) <- c("MCAR", "MAR", "MNAR")
+colnames(IC) <- c("2.5%", "97.5%")
+
+IC
+```
+
+Nous observons que la vraie valeur est située dans les deux premiers intervalles uniquement. De plus, le deuxième semble légèrement plus centré autour de cette valeur.
+
+***NOTE** : J'ai limpression de me répéter de ouf, je sais pas quoi dire d'autres.*
 
 
 # Simulation de données manquantes sur le jeu de données `mites`.
@@ -1265,6 +1462,7 @@ aggr(amp.mnar$amp, col=c('navyblue','red'),
                   ylab=c("Histogram of missing data","Pattern"))
 ```
 
+
 Ce dispositf MNAR se rapproche plus du dispositif MAR dans la description des données manquantes. En effet, chaque ligne contient aussi des données manquantes. On observe, de plus, que 100% des variables "Substrate", "Shrub" et "Topo" sont manquantes, comme dans le dispositif MAR. 
 
 **Analyse bivariée**
@@ -1274,6 +1472,7 @@ Ce dispositf MNAR se rapproche plus du dispositif MAR dans la description des do
 ```{r}
 library("DescTools")
 ?CramerV
+
 tab <- table(mites$Substrate, mites$Shrub)
 CramerV(tab)
 ```
@@ -1284,12 +1483,3 @@ CramerV(tab)
 
 \newpage
 # Références bibliographiques 
-
-
-
-
-
-
-
-
-

@@ -1190,6 +1190,7 @@ Nous allons dans un premier temps générer 10% de données manquantes sur notre
 ```{r}
 ?ampute
 amp.mcar = ampute(mites, prop = 0.10, mech = "MCAR")
+sum.mcar = summary(amp.mcar)
 ```
 
 -   Mécanisme **MAR** (**M**issing **A**t **R**andom)
@@ -1208,13 +1209,43 @@ Dire quelque chose ??
 
 ### Analyse exploratoire
 
+
+Sites importants :
+https://delladata.fr/decrire-description-descriptives/ 
+https://mran.microsoft.com/snapshot/2017-04-24/web/packages/mice/vignettes/ampute.html
+
+Explorer les 3 dispositifs de données manquantes créés.
+On pourra utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée, `CramerV` du package `DescTools` pour l'analyse bivariée, `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle
+
+```{r}
+install.packages("funModeling")
+install.packages("VIM")
+
 Explorer les 3 dispositifs de données manquantes créés. On pourra utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée, `CramerV` du package `DescTools` pour l'analyse bivariée, `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle
 
 ```{r}
-#install.packages("VIM")
 library("VIM")
-?aggr
+library("funModeling")
 ```
+
+
+```{r}
+names(amp.mcar)
+#Inspect amputed data
+md.pattern(amp.mcar$amp)
+md.pattern(amp.mar$amp)
+md.pattern(amp.mnar$amp)
+```
+-> savoir lire les graphiques et expliquer 
+"The rows of the table show the different missing data patterns with the number of cases accordingly. The first row always refers to the complete cases. The last column contains the number of variables with missings in that specific pattern. Consequently, each column total describes the number of cells with missing values for that variable."
+
+```{r}
+amp.mnar$prop
+amp.mar$prop
+amp.mcar$prop
+```
+On a bien 10% de données manquantes générées. 
 
 \newpage
 # Références bibliographiques 
+

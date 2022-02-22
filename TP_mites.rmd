@@ -1246,6 +1246,22 @@ amp.mcar$prop
 ```
 On a bien 10% de données manquantes générées. 
 
+<<<<<<< Updated upstream
 \newpage
 # Références bibliographiques 
+=======
+**Analyse univariée**
+
+```{r}
+install.packages("VIM")
+library("VIM")
+```
+
+`CramerV` du package `DescTools` pour l'analyse bivariée
+
+```{r}
+library("DescTools")
+?CramerV
+```
+>>>>>>> Stashed changes
 

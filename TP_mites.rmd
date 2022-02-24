@@ -4,23 +4,21 @@ author: "Romane Lacoste-Badie, Margaux Touzé et Camille Loisel"
 date: "02/03/2022"
 header-includes:
   - \DeclareUnicodeCharacter{0301}{/}
+  - \usepackage{float}
 output:
   bookdown::pdf_document2: default
-  bookdown::html_document2: default
-  pdf_document: default
-  html_notebook: default
-  html_document:
-    df_print: paged
+  number_section : true
+  extra_dependecies : ["float"]
 bibliography: mes_ref_biblio.bib
 ---
 
-\newpage
-\renewcommand{\contentsname}{Sommaire}
+\clearpage
+\renewcommand{\contentsname}
 \tableofcontents
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height = 4, fig.pos="H", out.extra = "")
 library(lmtest)
 library(stats)
 library(car)
@@ -37,13 +35,12 @@ library(mvtnorm)
 library(visdat)
 library(naniar)
 library(UpSetR)
-library(mi)
 library(bookdown)
 library(mice)
 library(VIM)
 ```
 
-\newpage
+\clearpage
 
 # Modèles linéaires généralisés (GLM) avec R
 
@@ -55,7 +52,7 @@ mites <- read.csv("mites.csv")
 
 L'objectif de cette première partie est d'étudier le jeu de données sur les mites Oribatid mis à disposition par P. Legendre et D. Borcard et décrit dans leur article [@Borcard1994]. Tout particulièrement, nous essaierons de construire différents modèles linéaires simples puis généralisés pour décrire trois des variables de ce jeu de données.
 
-Pour leur étude, Legendre et Borcard ont choisi une zone située à Saint-Hippolyte, Canada, qu'ils ont divisé en 70 "coeurs". Pour chaque coeur, ils ont récupéré des données environnementales et sur la faune. Le jeu de données que l'on étudie est donc constitué de 70 observations qui correspondent aux coeurs, et de 9 variables décrites ci-dessous.
+Pour leur étude, Legendre et Borcard ont choisi une zone située à Saint-Hippolyte, Canada, qu'ils ont divisée en 70 "coeurs". Pour chaque coeur, ils ont récupéré des données environnementales et sur la faune. Le jeu de données que l'on étudie est donc constitué de 70 observations qui correspondent aux coeurs, et de 9 variables décrites ci-dessous.
 
 ```{r}
 str(mites)
@@ -63,11 +60,11 @@ str(mites)
 
 -   **Galumna** (entier) : nombre de mites *Galumna sp*.
 
--   **pa** (0 ou 1) : présence (1) ou absence (0) de mites Galumna sp.
+-   **pa** (0 ou 1) : présence (1) ou absence (0) de mites *Galumna sp*.
 
 -   **totalabund** (entier) : nombre total de mites
 
--   **prop** (réel entre 0 et 1) : proportion de mites Galumna sp.
+-   **prop** (réel entre 0 et 1) : proportion de mites *Galumna sp*.
 
 -   **SubsDens** (réel) : densité du substrat en $g.L^{-1}$ de matière sèche non comprimée
 
@@ -79,8 +76,6 @@ str(mites)
 
 -   **Topo** (facteur) : microtopographie, facteur à 2 modalités
 
-Comme décrit ci-dessus, certaines variables sont des facteurs, mais le logiciel R ne les interprète pas comme cela naturellement. Nous allons donc les transformer en facteurs manuellement.
-
 ```{r, echo=F}
 mites$pa <- as.factor(mites$pa)
 mites$Substrate <- as.factor(mites$Substrate)
@@ -91,57 +86,63 @@ mites$Topo <- as.factor(mites$Topo)
 Nous allons maintenant représenter ces données afin de mieux les appréhender.\
 Commençons par les variables que l'on va chercher à expliquer par la suite : `Galumna`, `pa` et `prop.`
 
-```{r, echo=F}
-ggplot(data = mites) + geom_bar(mapping = aes(Galumna), fill='darkred') +labs(y = "Nombre de coeurs", x = "Nombre de Galumna", title = "Distribution de Galumna")
+```{r, echo=F, fig.cap="Distribution de Galumna"}
+ggplot(data = mites) + geom_bar(mapping = aes(Galumna), fill='darkred') +labs(y = "Nombre de coeurs", x = "Nombre de Galumna")
 ```
 
 On remarque que plus de la moitié des coeurs étudiés ne contiennent pas de mites Galumna. La valeur maximale de Galumna contenues dans un coeur est 8.
+\newline
 
-```{r, echo=F}
-ggplot(data = mites) + geom_bar(mapping = aes(pa), fill='darkred') +labs(y = "Nombre de coeurs", x = "Absence ou Présence de Galumna", title = "Distribution de pa")
+```{r, echo=F, fig.cap="Distribution de pa"}
+ggplot(data = mites) + geom_bar(mapping = aes(pa), fill='darkred') +labs(y = "Nombre de coeurs", x = "Absence ou Présence de Galumna")
 ```
 
 On voit ci-dessus plus précisément que 45 coeurs ne contiennent pas de Galumna et 25 coeurs en contiennent.
+\newline
 
-```{r, echo=F}
-ggplot(data=mites) + geom_histogram(aes(prop), fill="darkred", bins = 30) +labs(y = "Nombre de coeurs", x = "Proportion de Galumna", title = "Distribution de prop")
+```{r, echo=F, fig.cap="Distribution de prop"}
+ggplot(data=mites) + geom_histogram(aes(prop), fill="darkred", bins = 30) +labs(y = "Nombre de coeurs", x = "Proportion de Galumna")
 ```
 
 Naturellement, on remarque que 45 coeurs ont une proportion de Galumna de 0%. Pour les autres coeurs, la proportion varie entre 0 et 0.06%.
+\newline
 
 Passons maintenant aux variables explicatives.
+\newline
 
-```{r, echo=F}
-ggplot(data=mites) + geom_histogram(aes(SubsDens), fill="darkred", binwidth = 5) +labs(y = "Nombre de coeurs", x = "SubsDens", title = "Distribution de SubsDens")
+```{r, echo=F, fig.cap="Distribution de SubsDens"}
+ggplot(data=mites) + geom_histogram(aes(SubsDens), fill="darkred", binwidth = 5) +labs(y = "Nombre de coeurs", x = "SubsDens")
 ```
 
-```{r, echo=F}
-ggplot(data=mites) + geom_histogram(aes(WatrCont), fill="darkred", binwidth = 40) +labs(y = "Nombre de coeurs", x = "Watrcont", title = "Distribution de WatrCont")
+```{r, echo=F, fig.cap="Distribution de WatrCont"}
+ggplot(data=mites) + geom_histogram(aes(WatrCont), fill="darkred", binwidth = 40) +labs(y = "Nombre de coeurs", x = "Watrcont")
 ```
 
 Nous pouvons observer la distribution des variables quantitatives SubsDens et WatrCont. Cependant, ces variables étant déterministes, on ne fait pas d'hypothèse de normalité. Donc nous n'avons pas besoin de "vérifier" qu'elles suivent une loi normale, ni d'effectuer des transformations pour que cela soit le cas.
+\newline
 
-```{r, echo=F}
-ggplot(data = mites) + geom_bar(mapping = aes(Substrate), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Substrate", title = "Distribution de Substrate")
+```{r, echo=F, fig.cap="Distribution de Substrate"}
+ggplot(data = mites) + geom_bar(mapping = aes(Substrate), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Substrate")
 ```
 
 Les deux types de substrat majoritaires sont "Interface" et "Sphagn1", qui sont chacun le substrat d'environ 25 coeurs sur les 70 totaux.
+\newline
 
-```{r, echo=F}
-ggplot(data = mites) + geom_bar(mapping = aes(Shrub), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Shrub", title = "Distribution de Shrub")
+```{r, echo=F, fig.cap="Distribution de Shrub"}
+ggplot(data = mites) + geom_bar(mapping = aes(Shrub), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Shrub")
 ```
 
 La variable `Shrub` représente les buissons du coeur. On voit qu'un peu moins d'une vingtaine de coeurs ne contient pas de buisson. Puis environ 25 coeurs contiennent beaucoup de buissons et peu de buissons.
+\newline
 
-```{r, echo=F}
-ggplot(data = mites) + geom_bar(mapping = aes(Topo), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Topo", title = "Distribution de Topo")
+```{r, echo=F, fig.cap="Distribution de Topo"}
+ggplot(data = mites) + geom_bar(mapping = aes(Topo), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Topo")
 ```
 
-Finalement, on voit qu'environ 45 coeurs ont une topographie de type "Blanket", les autres ont une topographie de type "Hummock".
-
+Finalement, on voit qu'environ 45 coeurs ont une topographie de type "Blanket", les autres ont une topographie de type "Hummock".  
 Ce premier coup d'oeil aux données nous a permis de remarquer quelque chose d'important : plus de la moitié des coeurs ne contiennent pas de Galumna. Cela siginifie, pour ceux-ci, que la proportion de Galumna est nulle, que la variable Galumna est égale à 0 et que la variable occurence de Galumna est également égale à 0. Il est important de garder cela à l'esprit pour la future construction de nos modèles.
 
-\newpage
+\clearpage
 
 ## LM Gaussien
 
@@ -178,7 +179,7 @@ Nous allons observer la linéarité du modèle dans un premier temps par représ
 
 *Variable réponse Galumna :*
 
-```{r, echo=F}
+```{r, echo=F, fig.cap="Modèles de régression sur la variable réponse Galumna"}
 p1 <- ggplot(data=mites, aes(x=SubsDens, y=Galumna)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(Galumna~SubsDens)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(Galumna~SubsDens)"), values=c("darkred")) + theme(legend.position = "top")
 p2 <- ggplot(data=mites, aes(x=WatrCont, y=Galumna)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(Galumna~WatrCont)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(Galumna~WatrCont)"), values=c("darkred")) + theme(legend.position = "top")
 grid.arrange(p1,p2, nrow=1)
@@ -186,9 +187,7 @@ grid.arrange(p1,p2, nrow=1)
 
 On ne voit pas un lien linéaire évident entre `Galumna` et `SubsDens`, ni entre `Galumna` et `WatrCont.` On voit que la quantité importante de points sur l'axe des abscisses (pour lesquels `Galumna`=0) semble beaucoup impacter la droite de régression.
 
-*Variable réponse pa :*
-
-```{r, echo=F}
+```{r, echo=F, fig.cap="Modèles de régression sur la variable réponse pa"}
 p1 <- ggplot(data=mites, aes(x=SubsDens, y=pa)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(pa~SubsDens)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(pa~SubsDens)"), values=c("darkred")) + theme(legend.position = "top")
 p2 <- ggplot(data=mites, aes(x=WatrCont, y=pa)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(pa~WatrCont)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(pa~WatrCont)"), values=c("darkred")) + theme(legend.position = "top")
 grid.arrange(p1,p2, nrow=1)
@@ -196,9 +195,7 @@ grid.arrange(p1,p2, nrow=1)
 
 On ne voit pas non plus un lien linéaire entre la variable `pa` et les variables explicatives. De plus, comme c'est une variable binaire, il semblerait plus naturel de penser à une régression logistique qu'à une régression linéaire.
 
-*Variable réponse prop :*
-
-```{r, echo=F}
+```{r, echo=F, fig.cap="Modèles de régression sur la variable réponse prop"}
 p1 <- ggplot(data=mites, aes(x=SubsDens, y=prop)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(prop~SubsDens)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(prop~SubsDens)"), values=c("darkred")) + theme(legend.position = "top")
 p2 <- ggplot(data=mites, aes(x=WatrCont, y=prop)) + geom_point() + geom_smooth(method="lm", formula = y~x, aes(color="lm(prop~WatrCont)"), se=F) +scale_colour_manual(name="Regression model", breaks=c("lm(prop~WatrCont)"), values=c("darkred")) + theme(legend.position = "top")
 grid.arrange(p1,p2, nrow=1)
@@ -215,7 +212,8 @@ kable(data.frame(c(harvtest(lm(Galumna~WatrCont+SubsDens, data=mites))$p.value,
                     row.names=c("Galumna~WatrCont+SubsDens",
                                   "pa~WatrCont+SubsDens",
                                   "prop~WatrCont+SubsDens")),
-                  col.names = "p-value Harvey-Collier Test")
+                  col.names = "p-value Harvey-Collier Test",
+      caption="Harvey-Collier Test")
 ```
 
 Au seuil de 5%, on peut conclure que :
@@ -238,7 +236,7 @@ lm.tot.pa<-lm(pa~.-Galumna-prop-totalabund, data=mites)
 lm.tot.prop<-lm(prop~.-pa-Galumna-totalabund, data=mites)
 ```
 
-```{r, echo=F, warning=F}
+```{r, echo=F, warning=F, fig.cap="Variances des résidus des modèles de régression linéaire"}
 par(mfrow=c(2,2))
 plot(lm.tot.g, which = 3)
 title(main="lm(Galumna~.)", line=1.4)
@@ -259,7 +257,8 @@ kable(data.frame(c(bptest(lm.tot.g)$p.value,
                     row.names=c("Galumna~WatrCont+SubsDens",
                                   "pa~WatrCont+SubsDens",
                                   "prop~WatrCont+SubsDens")),
-                    col.names = "p-value Bruesch-Pagan Test")
+                    col.names = "p-value Bruesch-Pagan Test",
+                    caption="Breusch-Pagan Test")
 ```
 
 Ce test confirme la conclusion basée sur les graphiques : on rejette l'hypothèse d'homoscédasticité des résidus pour le modèle expliquant `pa`, mais on l'accepte pour les deux autres modèles.
@@ -275,7 +274,8 @@ kable(data.frame(c(dwtest(lm.tot.g)$p.value,
                     row.names=c("Galumna~WatrCont+SubsDens",
                                   "pa~WatrCont+SubsDens",
                                   "prop~WatrCont+SubsDens")),
-      col.names = "p-value Durbin-Watson Test")
+      col.names = "p-value Durbin-Watson Test",
+      caption="Durbin-Watson Test")
 ```
 
 On observe une p-value inférieure à 0.05 pour les modèles expliquant `Galumna` et `prop.` On peut dire qu'au seuil de 5%, on considère que l'hypothèse de non-autocorrélation des erreurs n'est pas respectée pour ces deux modèles. Elle est cependant vérifiée pour le modèle linéaire expliquant `pa.`\
@@ -285,7 +285,7 @@ On observe une p-value inférieure à 0.05 pour les modèles expliquant `Galumna
 
 Dans le cadre d'un modèle linéaire, on suppose $\epsilon_i \sim N(0, \sigma^2)$. Une façon de vérifier cette hypothèse est de tracer les QQ-plot de nos modèles linéaires.
 
-```{r, echo=F, warning =F}
+```{r, echo=F, warning =F, fig.cap="QQ-plot des modèles de régression linéaire"}
 par(mfrow=c(2,2))
 plot(lm.tot.g, which = 2)
 title(main="lm(Galumna~.)", line=1.4)
@@ -304,7 +304,8 @@ kable(data.frame(c(shapiro.test(lm.tot.g$residuals)$p.value,
                     row.names=c("Galumna~WatrCont+SubsDens",
                                   "pa~WatrCont+SubsDens",
                                   "prop~WatrCont+SubsDens")),
-      col.names = "p-value Shapiro-Wilk Test" )
+      col.names = "p-value Shapiro-Wilk Test",
+      caption="Shapiro-Wilk Test")
 ```
 
 On observe une très petite p-value pour les trois modèles linéaires. On considère que l'hypothèse de normalité des résidus n'est pas vérifiée pour nos trois modèles.
@@ -315,7 +316,7 @@ La dernière hypothèse qui doit être vérifiée lorsque l'on ajuste un modèle
 
 *Corrélations SubsDens\~ :*
 
-```{r, echo=F}
+```{r, echo=F, fig.cap="Corrélations avec la variable SubsDens"}
 p1 <- ggplot(data=mites, aes(x = WatrCont, y=SubsDens)) + geom_point(color="darkred") + labs(title = "SubsDens ~ WatrCont") + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 
 p2 <- ggplot(data=mites, aes(Substrate, SubsDens)) + geom_boxplot(color="darkred") + labs(title = "SubsDens ~ Substrate") + scale_x_discrete(labels = c('B','I','L', 'Sph1','Sph2','Sph3','Sph4')) + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold")) 
@@ -330,7 +331,7 @@ Il ne semble pas y avoir de corrélation particulière entre les variables quant
 
 *Corrélations WatrCont\~ :*
 
-```{r, echo=F}
+```{r, echo=F, fig.cap="Corrélations avec la variable WatrCont"}
 p1 <- ggplot(data=mites, aes(Substrate, WatrCont)) + geom_boxplot(color="darkred") + labs(title = "WatrCont ~ Substrate") + scale_x_discrete(labels = c('B','I','L', 'Sph1','Sph2','Sph3','Sph4')) + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 
 p2 <- ggplot(data=mites, aes(Shrub, WatrCont)) + geom_boxplot(color="darkred") + labs(title = "WatrCont ~ Shrub") + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
@@ -343,7 +344,7 @@ Les variables `Substrate` et `Shrub` semblent avoir une influence significative 
 
 *Corrélations Substrate\~ :*
 
-```{r, echo=F}
+```{r, echo=F, fig.cap="Corrélations avec la variable Substrate"}
 p1 <- ggplot(data=mites, aes(Substrate, fill=Shrub)) + geom_bar() +scale_fill_manual(values=c("#330000", "#990000", "#CC0000")) + labs(title = "Substrate ~ Shrub") + scale_x_discrete(labels = c('B','I','L', 'Sph1','Sph2','Sph3','Sph4')) + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 p2 <- ggplot(data=mites, aes(Substrate, fill=Topo)) + geom_bar() +scale_fill_manual(values=c("#330000", "#990000", "#CC0000")) + labs(title = "Substrate ~ Topo") + scale_x_discrete(labels = c('B','I','L', 'Sph1','Sph2','Sph3','Sph4')) + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 grid.arrange(p1, p2, nrow=1)
@@ -353,7 +354,7 @@ Du fait du peu de donées que nous avons à disposition, il est difficile de con
 
 *Corrélations Shrub\~ :*
 
-```{r, echo=F}
+```{r, echo=F, fig.cap="Corrélations avec la variable Shrub"}
 p1 <- ggplot(data=mites, aes(Shrub, fill=Topo)) + geom_bar() +scale_fill_manual(values=c("#330000", "#990000")) + labs(title = "Shrub ~ Topo") + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
 p1
 ```
@@ -365,7 +366,8 @@ Une nouvelle fois, au vu du faible nombre d'observations, il serait risqué de c
 ```{r, echo=F}
 kable(data.frame(vif(lm.tot.g)[,1],vif(lm.tot.pa)[,1],vif(lm.tot.prop)[,1],
                     row.names=c("SubsDens", "WatrCont", "Substrate", "Shrub", "Topo")),
-      col.names = c("lm(Galumna~.)","lm(pa~.)","lm(prop~.)"))
+      col.names = c("lm(Galumna~.)","lm(pa~.)","lm(prop~.)"),
+      caption="VIF")
 ```
 
 Les VIF sont par définition toujour supérieurs à 1. On considère que le VIF d'une variable devient trop élevé lorsque sa valeur dépasse 5. Ce n'est pas le cas pour notre modèle. On peut donc conclure grâce aux VIF, et à notre analyse bivariée qu'il y a non-multicolinéarité entre les variables explicatives.
@@ -384,22 +386,22 @@ Transformer les données peut parfois régler les problèmes posés par les hypo
 
 Dans le cadre de notre étude, nous essaierons des transformations adaptées aux données en proportion pour notre variable `prop.` Ensuite, nous essaierons une transformation plus générale : celle de Box & Cox.
 
-#### Transformation pour les données en proportion
+#### Transformation pour les données en proportion  
 
 Deux des principales transformations qui permettent de stabiliser la variance pour les données en proportion sont la transformation $logit$ et la transformation $arcsin$. Cependant, pour des données écologiques, la transformation $arcsin$ est souvent préférée car il est courant d'avoir des proportions à 0% ou 100%, ce qui pose problème pour effectuer une transformation $logit$. En effet, cela ferait donnerait lieu à des valeurs de $-\infty$ pour des proportions égales à 0. On rappelle que c'est notre cas : nous avions remarqué, lors de notre analyse préliminaire des données, que plusieurs observations avaient une valeur de 0 pour la variable prop. Il est donc impossible ici d'utiliser une transformation $logit$ sur les données.
 
 *Transformation Arcsin :*
 
-```{r, echo=F}
+```{r, echo=F, fig.cap="Transformation Arcsin"}
 asinTransform <- function(p) { asin(sqrt(p)) }
 prop.asin <- asinTransform(mites$prop)
-ggplot(data=data.frame(mites$prop, prop.asin),aes(x=mites$prop, y=prop.asin)) + geom_point() + geom_line(color="darkred")+ labs(title="Transformation Arcsin",x = "prop", y="Arcsin(prop)") + theme(plot.title = element_text(size = 10, color = "darkred", face = "bold"))
+ggplot(data=data.frame(mites$prop, prop.asin),aes(x=mites$prop, y=prop.asin)) + geom_point() + geom_line(color="darkred")+ labs(x = "prop", y="Arcsin(prop)")
 ```
 
 On voit ci-dessus que la transformation $arcsin$ semble finalement assez proche d'une transformation linéaire. Regardons ce que cela provoque sur les hypothèses du modèle linéaire gaussien.\
 Rappelons que nous avions conclu, avant transformation, que l'hypothèse d'homoscédasticité des résidus était vérifiée. Cependant, ce n'était pas le cas pour l'hypothèse de normalité des résidus. Regardons ce qu'il en est après transformation.
 
-```{r, echo=F, warning=F}
+```{r, echo=F, warning=F, fig.cap="QQ-plot Transformation Arcsin"}
 lm.prop.asin <- lm(prop.asin~.-pa-prop-totalabund-Galumna, data =mites)
 par(mfrow=c(1,2))
 plot(x=lm.tot.prop, which = 2)
@@ -416,7 +418,7 @@ cat("p-value Shapiro-Wilk Test :",shapiro.test(lm.prop.asin$residuals)$p.value)
 
 Une nouvelle fois, on rejette $H_0$ et on conclut que l'hypothèse de normalité des résidus n'est toujours pas vérifiée, même après une transformation $arcsin$.
 
-#### Transformation de Box-Cox
+#### Transformation de Box-Cox  
 
 La tranformation de Box & Cox est une transformation non linéaire souvent utilisée pour rendre les données normales. L'objectif est donc d'obtenir une distribution normale des données après transformation, et une variance constante. La transformation s'obtient comme suit : $$
 \{ y \in \mathbb{R}^+_*, \lambda \in \mathbb{R} \} : y^*=f(y, \lambda)= 
@@ -535,7 +537,7 @@ Nous allons donc essayer des modèles linéaires généralisés avec différente
 
 \newpage
 
-## GLM Régression logistique binaire sur la variable d'occurrence (pa)
+## GLM Régression Logistique binaire sur la variable d'occurrence (pa)
 
 **Objectif** : expliquer l'occurence `pa`, déterminer le meilleur modèle, interpréter les coefficients, puis évaluer l'ajustement de ce modèle et son pouvoir prédictif.
 
@@ -553,7 +555,7 @@ Ainsi, on suppose ici que $y_i$ suit une loi de Bernouilli $B(1,\frac{\exp(x_i^T
 
 Sous R, on indique en paramètre de la fonction `family="binomial"` et il n'est pas nécessaire de préciser la fonction de lien car par défaut, pour la famille binomiale, la fonction de lien est $logit$.
 
-#### Recherche du meilleur modèle
+### Recherche du meilleur modèle
 
 ```{r, echo=F}
 mites$pa <- as.factor(mites$pa)
@@ -614,7 +616,7 @@ Par conséquent, nous retenons le modèle suivant pour la suite :
   logit(\hat{\pi})= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock (\#eq:a)
 \end{equation}
 
-#### Interprétation des coefficients
+### Interprétation des coefficients
 
 La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio. L'odd-ratio est défini comme le rapport des probabilités d'apparition de l'évènement $Y=1$ contre $Y=0$. L'odd est la quantité $\frac{\pi_i}{1-\pi_i}$. Dans le modèle logistique, on définit plus précisément l'odd par : $$\frac{\pi_i}{1-\pi_i}=\exp(x_i^T\beta)=\exp(\beta_0+\beta_1x^i_1+...+\beta_px_i^p)$$ et si on considère deux individus $i_1$ et $i_2$ dont la valeur des covariables ne diffère que de 1 pour la $j$-ième covariable, soit $x_{i_1}^j-x_{i_2}^j=1$, on calcule l'odd-ratio avec : $$\frac{\pi_{i_1}}{1-\pi_{i_1}}/\frac{\pi_{i_2}}{1-\pi_{i_2}} = \exp(\beta_j)$$. On dira alors qu'une augmentation de 1 de la variable $j$ entraîne une multiplication de l'odds-ratio de $\exp(\beta_j)$.
 
@@ -624,7 +626,7 @@ kable(data.frame(exp(glm.best.pa$coefficients),row.names=c("Intercept", "WatrCon
 
 Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (`WatrCont`), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis ce que pour une unité de densité du substrat (`SubsDens`) en plus, le risque est plus élevé de $18$%. Enfin, lorsque de la topographie est de type Hummock, il y a énroméménet de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
 
-#### Validation du modèle
+### Validation du modèle
 
 Afin de valider notre modèle, nous allons à présent évaluer son ajustement, ainsi que ses pouvoirs explicatifs et de classfication.
 
@@ -752,7 +754,7 @@ La variable `prop` est, comme son nom l'indique, une variable en proportion. Mal
 
 Sous R, on peut utiliser la fonction `glm` de manière semblable à lorsque l'on fait une régression logistique classique, mais en précisant cette fois des poids a priori.
 
-#### Recherche du meilleur modèle
+### Recherche du meilleur modèle
 
 On suivra la même méthode que dans la partie précédente pour chercher le meilleur modèle : une recherche à la main dans un premier temps, puis une méthode de sélection automatique.
 
@@ -812,7 +814,7 @@ On retient finalement le modèle suivant :\
 logit(\hat{\pi})=-4.23 -0.006*WatrCont+0.029*SubsDens+0.729*TopoHummock (\#eq:b)
 \end{equation}
 
-#### Interprétation des coefficients
+### Interprétation des coefficients
 
 On peut interpréter les coefficients du modèle pour nos trois variables grâce à leurs odds-ratios. L'odd-ratio pour la variable $j$ est égal à $\exp(\beta_j)$.
 
@@ -823,7 +825,7 @@ kable(data.frame(exp(prop.reg.best$coefficients),row.names=c("Intercept", "WatrC
 L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa p-value associée au test de Wald est inférieure à 5% donc on peut dire que la proportion de mites est significativement moins élevée si la quantité d'eau dans le sol augmente. L'odd-ratio de `SubsDens` est quant à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%. Cela signifie que la proportion de mites sera significativement plus importante si la densité du substrat augmente.\
 Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à 5%. Donc on peut conclure que si la topographie est de type Hummock, la proportion de mites sera significativement plus élevée.
 
-#### Validation du modèle
+### Validation du modèle
 
 Enfin, nous devons maintenant regarder si notre modèle est "bon". Nous allons, pour cela, évaluer sa qualité d'ajustement et son pouvoir explicatif.
 
@@ -859,10 +861,10 @@ Enfin, nous devons maintenant regarder si notre modèle est "bon". Nous allons, 
     res <- sum(residuals(prop.reg.back, type = "pearson")^2)
     ddl <- df.residual(prop.reg.back)
     pvalue <- 1-pchisq(res,ddl)
-    pvalue
+    cat("p-value pour le test de Pearson : ", pvalue)
     ```
 
-    La p-value est très grande. On accepte donc $H_0$ et on conclut que le modèle ajuste correctement les données.
+    La p-value est très petite. Cela signifie que d'après le test de Pearson, notre modèle n'ajuste pas très bien les données. Cependant, nous ne voyons pas comment le changer afin qu'il soit meilleur à ce niveau là. Nous continuons avec ce modèle, tout en gardant à l'esprit qu'il présente des défauts d'ajustement.
 
     On finit par représenter les résidus.
 
@@ -899,7 +901,7 @@ Pour une distribution Poisson $Y \sim Pois(\lambda)$ avec le lien $log$ par déf
 
 Comme pour la régression logistique, la régression de Poisson utilise la fonction `glm`. Il faut spécifier la famille "poisson" et (optionnellement) le lien $log$. En effet, le logarithme est la foncton de lien par défaut pour la régression de Poisson sur `R`.
 
-#### Recherche du meilleur modèle
+### Recherche du meilleur modèle
 
 -   **Méthode "à la main"**
 
@@ -965,9 +967,9 @@ Le modele selectionné s'écrit donc : $$log(Y)=\beta_0+\beta_1*WatrCont+\beta_2
 log(Y)=0.710-0.008*WatrCont+0.034*SubsDens + 0.892*TopoHummock (\#eq:c)
 \end{equation}
 
-#### Interprétation des coefficients
+### Interprétation des coefficients
 
-Nous allons maintenant interpréter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\mu_i=\beta_0+\beta_1*WatrCont+\beta_2*SubsDens+\beta_3*TopoHummock$, puis déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
+Nous allons maintenant interpréter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\eta=\beta_0+\beta_1*WatrCont+\beta_2*SubsDens+\beta_3*TopoHummock$, puis déduire l'effet sur la moyenne de réponse à partir de la fonction $\lambda=e^\eta$.
 
 -   Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable SubsDens reste constante. Nous avons donc le facteur $e^{-0.008}=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
 -   Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur $e^{0.034}=1.034585$. On en conclut que la densité n'influe pas sur l'abondance de Galumna.
@@ -1039,7 +1041,7 @@ summary(glm.poi4)
     cat("p-value pour le test de Pearson : ", pvalue)
     ```
 
-    Problème très petite p-val (idem à part 3)
+    La p-value est très petite. Cela signifie que d'après le test de Pearson, notre modèle n'ajuste pas très bien les données. Cependant, nous ne voyons pas comment le changer afin qu'il soit meilleur à ce niveau là. Nous continuons avec ce modèle, tout en gardant à l'esprit qu'il présente des défauts d'ajustement.
 
 -   **Evaluation du pouvoir explicatif du modèle**
 
@@ -1052,7 +1054,7 @@ cat("pseudo-R2 : ", pseudoR2)
 
 D'après ce résultat, on en conclut que notre modèle explique plus de $45$% des données.
 
-Ainsi, nous en déduisons que le modèle \@ref(eq:c) de régression Poisson expliquant l'abondance de Galumna grâce au contenu en eau, à la densité du substrat et à la topographie  est un bon modèle explicatif pour nos données.
+Ainsi, nous en déduisons que le modèle \@ref(eq:c) de régression quasi-Poisson expliquant l'abondance de Galumna grâce au contenu en eau, à la densité du substrat et à la topographie  est un bon modèle explicatif pour nos données.
 
 **Conclusion :** \
 Le but initial de notre étude était de décrire le jeu de données sur les mites Oribatid. Pour cela, nous avons commencé par faire de l'analyse descriptive des variables, individuellement, puis colectivement. Ensuite, nous avons tenté d'ajuster un modèle linéaire pour expliquer trois variables du jeu de données. Nous avons été confrontées à un problème : aucun modèle, même aorès transformation des données, ne satisfaisait toutes les hypothèses du modèle linéaire gaussien. Nous avons donc choisi d'autres distributions (non gaussiennes), mieux adaptées à nos données, et ajusté un modèle linéaire généralisé pour chacune d'entre elles. Finalement, nous obtenons trois modèles qui nous permettent d'expliquer nos trois variables. Nous jugeons nos modèles plutôt bons, bien que leur qualité globale puisse être discutée.
@@ -1061,7 +1063,7 @@ Le but initial de notre étude était de décrire le jeu de données sur les mit
 
 # Données manquantes
 
-## 1. Simulations scénarios NA
+## Simulations scénarios NA
 
 #### Simulations
 
@@ -1406,8 +1408,8 @@ On a bien 10% de données manquantes générées pour les 3 dispositifs.
 ### Analyse exploratoire
 
 ```{r}
-install.packages("funModeling")
-install.packages("VIM")
+#install.packages("funModeling")
+#install.packages("VIM")
 library("VIM")
 library("funModeling")
 ```
@@ -1423,7 +1425,7 @@ On pourra utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée
 
 MCAR
 ```{r}
-install.packages("VIM")
+#install.packages("VIM")
 library("VIM")
 aggr(amp.mcar$amp, col=c('navyblue','red'),
                   numbers=TRUE,

@@ -38,6 +38,7 @@ library(UpSetR)
 library(bookdown)
 library(mice)
 library(VIM)
+library(lattice)
 ```
 
 \clearpage
@@ -639,10 +640,12 @@ Par conséquent, nous retenons le modèle suivant pour la suite :
   logit(\hat{\pi})= - 0.583 - 0.022*WatrCont +0.173*SubsDens + 2.738*TopoHummock (\#eq:a)
 \end{equation}
 ```
+
 ### Interprétation des coefficients
 
 La sortie de notre modèle indique que le contenu en eau, la densité du substrat et la topographie sont associés significativement à l'occurrence de mites. Cependant, on peut également interpréter les coefficients de la pente grâce aux odds-ratio. L'odd-ratio est défini comme le rapport des probabilités d'apparition de l'évènement $Y=1$ contre $Y=0$. L'odd est la quantité $\frac{\pi_i}{1-\pi_i}$. Dans le modèle logistique, on définit plus précisément l'odd par : $$\frac{\pi_i}{1-\pi_i}=\exp(x_i^T\beta)=\exp(\beta_0+\beta_1x^i_1+...+\beta_px_i^p)$$ et si on considère deux individus $i_1$ et $i_2$ dont la valeur des covariables ne diffère que de 1 pour la $j$-ième covariable, soit $x_{i_1}^j-x_{i_2}^j=1$, on calcule l'odd-ratio avec : $$\frac{\pi_{i_1}}{1-\pi_{i_1}}/\frac{\pi_{i_2}}{1-\pi_{i_2}} = \exp(\beta_j)$$
 On dira alors qu'une augmentation de 1 de la variable $j$ entraîne une multiplication de l'odds-ratio de $\exp(\beta_j)$.
+
 
 ```{r, echo=F}
 kable(data.frame(exp(glm.best.pa$coefficients),row.names=c("Intercept", "WatrCont", "SubsDens", "TopoHummock")), col.names=c("Odds-ratios"), caption="Odds-ratios du modèle expliquant pa", position ="H")
@@ -1079,7 +1082,9 @@ cat("pseudo-R2 : ", pseudoR2)
 
 D'après ce résultat, on en conclut que notre modèle explique plus de $45$% des données.
 
+
 Ainsi, nous en déduisons que le modèle \@ref(eq:c) de régression quasi-Poisson expliquant l'abondance de Galumna grâce au contenu en eau, à la densité du substrat et à la topographie est un bon modèle explicatif pour nos données.
+
 
 **Conclusion :**\
 Le but initial de notre étude était de décrire le jeu de données sur les mites Oribatid. Pour cela, nous avons commencé par faire de l'analyse descriptive des variables, individuellement, puis colectivement. Ensuite, nous avons tenté d'ajuster un modèle linéaire pour expliquer trois variables du jeu de données. Nous avons été confrontées à un problème : aucun modèle, même aorès transformation des données, ne satisfaisait toutes les hypothèses du modèle linéaire gaussien. Nous avons donc choisi d'autres distributions (non gaussiennes), mieux adaptées à nos données, et ajusté un modèle linéaire généralisé pour chacune d'entre elles. Finalement, nous obtenons trois modèles qui nous permettent d'expliquer nos trois variables. Nous jugeons nos modèles plutôt bons, bien que leur qualité globale puisse être discutée.
@@ -1088,13 +1093,13 @@ Le but initial de notre étude était de décrire le jeu de données sur les mit
 
 # Données manquantes
 
-## Simulations scénarios NA
+## 1. Scénarios NA sur un jeu de données simulées
 
 #### Simulations
 
 Dans le but d'étudier différents scénarios d'imputation de données manquantes, nous commençons par simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne $\mu=\begin{pmatrix} 0 \\ 0 \end{pmatrix}$ et de variance $\begin{pmatrix} 1 & 0.5 \\ 0.5 & 1 \end{pmatrix}$. Pour cela, on utilise la fonction `rmvnorm` du package `mvtnorm`.
 
-```{r}
+```{r, echo=F}
 n <- 100
 mu <- c(0,0)
 matcov <- matrix(c(1, 0.5, 0.5, 1), nrow=2, ncol = 2)
@@ -1108,7 +1113,9 @@ Ensuite, nous ajoutons des données manquantes sur $Y$ selon plusieurs mécanism
 
 Le premier mécanisme que nous utilisons est appelé MCAR. Pour celui-ci, les données sont manquantes de façon totalement aléatoire, c'est-à-dire que la probabilité d'abscence est la même pour toutes les observations. Dans notre cas, on choisit $P(M=0)=0.35$.
 
-```{r}
+Voici les informations concernant du jeu de données obtenu :
+
+```{r, echo=F}
 set.seed(123)
 don.ismcar = don
 
@@ -1124,7 +1131,9 @@ summary(don.ismcar)
 
 Ensuite, nous utilisons le mécanisme MAR. Contrairement au précédent, la probabilité d'abscence est liée à une ou plusieurs autres variables observées. Elle ne dépend cependant pas des valeurs manquantes. Ici, on choisit $P(M=0\vert{X})=\mathcal{B}(\phi(1.2X-0.5))$ où $\phi(.)$ désigne la fonction de répartition d'une loi normale $\mathcal{N}(0,1)$.
 
-```{r}
+On obtient un jeu de données ayant les caractéristiques suivantes pour chacune de ses variables :
+
+```{r, echo=F}
 set.seed(123)
 
 don.ismar <- don
@@ -1136,15 +1145,16 @@ ismar <- sapply(don.ismar[,"X"], FUN=function(xx){
 
 don.ismar[ismar,"Y"] <- NA #Les valeurs de Y tq ismar = T sont mises à NA
 don.ismar <- as.data.frame(don.ismar)
-don.ismar
 summary(don.ismar)
 ```
 
 -   Mécanisme **MNAR** (**M**issing **N**ot **A**t **R**andom)
 
-Enfin, nous utilisons le mécanisme MNAR. Cette fois-ci, les données sont manquantes de façon non aléatoire, c'est-à-dire qu'elles dépendent des variables en question. En effet, la probabilité qu'une valeur soit manquante dépend d'une ou plusieurs données non observées pour les autres variables, ici $X$. Dans notre cas, on a $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$, où $\phi(.)$ désigne toujourds la fonction de répartition d'une loi normale $\mathcal{N}(0,1)$.
+Enfin, nous utilisons le mécanisme MNAR. Cette fois-ci, les données sont manquantes de façon non aléatoire, c'est-à-dire qu'elles dépendent des variables en question. En effet, la probabilité qu'une valeur soit manquante dépend d'une ou plusieurs données non observées pour les autres variables, ici $X$. Dans notre cas, on a $P(M=0\vert{Y})=\mathcal{B}(\phi(1.2X-0.5))$, où $\phi(.)$ désigne toujours la fonction de répartition d'une loi normale $\mathcal{N}(0,1)$.
 
-```{r}
+Le jeu de données obtenu contient toujours deux variables vérifiant les informations suivantes :
+
+```{r, echo = F}
 set.seed(123)
 
 don.ismnar <- don
@@ -1156,7 +1166,6 @@ ismnar <- sapply(don.ismnar[,"Y"], FUN=function(xx){
 
 don.ismnar[ismnar,"Y"] <- NA #Les valeurs de Y tq ismar = T sont mises à NA
 don.ismnar <- as.data.frame(don.ismnar)
-don.ismnar
 summary(don.ismnar)
 ```
 
@@ -1166,25 +1175,28 @@ Notons que ce dernier type de données manquantes est plus complexe à traiter p
 
 Maintenant que nous avons ajouté de trois manières différentes des valeurs manquantes sur la variable $Y$, nous allons analyser les jeux de données obtenus. Pour cela, nous commençons par les visualiser en entier. Nous utilisons la fonction `vis_miss` du package `visdat`.
 
-```{r}
+```{r, echo = F, warning = F}
+print("MCAR")
 vis_miss(don.ismcar)
+print("MAR")
 vis_miss(don.ismar)
+print("MNAR")
 vis_miss(don.ismnar)
 ```
 
 Nous remarquons que les pourcentages de données manquantes sont équivalents. Cependant, elles ne sont pas réparties de la même façon dans les différents cas.
 
-Nous pouvons alors regarder plus en détails comment sont reparties les données manquantes de $Y$ selon les valeurs de $X$ pour chacun des jeux de données.
+Nous pouvons alors regarder plus en détails comment sont reparties les données manquantes de $Y$ selon les valeurs de $X$ pour chacun des jeux de données. Pour cela, nous utilisons la fonction `geom_miss_point` disponible dans `ggplot`.
 
-```{r}
+```{r, echo = F}
 ggplot(data = don.ismcar) +
-aes(x = X, y = Y) + geom_miss_point()
+aes(x = X, y = Y) + geom_miss_point() + labs(title="MCAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 
 ggplot(data = don.ismar) +
-aes(x = X, y = Y) + geom_miss_point()
+aes(x = X, y = Y) + geom_miss_point() + labs(title="MAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 
 ggplot(data = don.ismnar) +
-aes(x = X, y = Y) + geom_miss_point()
+aes(x = X, y = Y) + geom_miss_point() + labs(title="MNAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 Nous remarquons que pour la deuxième configuration, les valeurs manquantes sont plutôt associées à un $X$ positif, tandis que dans les deux autres cas, elles sont reparties dans les négatifs également.
@@ -1195,7 +1207,7 @@ Nous remarquons que pour la deuxième configuration, les valeurs manquantes sont
 
 Nous voulons à présent étudier nos jeux de données et déterminer la moyenne de la variable $Y$, ainsi que l'intervalle de confiance associé pour chacun d'entre eux. Nous pourrons ensuite comparer les résultats obtenus.
 
-Pour ce faire, plusieurs méthodes seront utilisées. En effet, dans un premier temps, nous allons utiliser uniquement les données non manquantes de la variable. Puis, nous testerons différentes méthodes d'imputation pour les valeurs non rensignées.
+Pour ce faire, plusieurs méthodes seront utilisées. En effet, dans un premier temps, nous allons utiliser uniquement les données non manquantes de la variable. Puis, nous testerons différentes méthodes d'imputation pour les valeurs non renseignées.
 
 -   Cas complets
 
@@ -1203,7 +1215,7 @@ Comme évoqué, nous débutons par une analyse des cas complets. Cela consiste �
 
 Dans notre cas, nous avons environ $30$% de Na dans nos différents jeux de données. De plus, deux d'entre eux comportent des valeurs manquantes qui ne sont pas de type MCAR. Il ne serait donc pas judicieux de procéder ainsi. Cependant, l'objectif ici étant de comparer plusieurs méthodes, nous allons tout de même le réaliser. Pour cela, nous utilisons la fonction `na.omit`.
 
-```{r}
+```{r, echo = F}
 don.ismcar.cc <- na.omit(don.ismcar)
 don.ismar.cc <- na.omit(don.ismar)
 don.ismnar.cc <- na.omit(don.ismnar)
@@ -1211,17 +1223,24 @@ don.ismnar.cc <- na.omit(don.ismnar)
 
 Nous pouvons regarder la dimension de nos nouveaux jeux de données "complets".
 
-```{r}
-dim(don.ismcar.cc)
-dim(don.ismar.cc)
-dim(don.ismnar.cc)
+```{r, echo = F}
+dfMCAR <- data.frame(dim(don.ismcar.cc), row.names = c('Observations', "Variables"))
+colnames(dfMCAR) = "MCAR"
+
+dfMAR <- data.frame(dim(don.ismar.cc), row.names = c('Observations', "Variables"))
+colnames(dfMAR) = "MAR"
+
+dfMNAR <- data.frame(dim(don.ismnar.cc), row.names = c('Observations', "Variables"))
+colnames(dfMNAR) = "MNAR"
+
+kable(data.frame(cbind(dfMCAR,dfMAR,dfMNAR)),position="H", caption = "Dimension du jeu de données complet")
 ```
 
 La dimension initiale était de $100$ observations. Après suppression, nous en gardons nettement moins. Rappelons que les lignes retirées ne sont pas les mêmes pour chacun des jeux de données car les valeurs manquantes ne se situaient pas au même endroit.
 
-Nous pouvons à présent calculer la moyenne de $Y$. Pour cela, nous réalisons une régression simple sur la variable et nous récupérons l'intercept.
+Nous pouvons à présent calculer la moyenne de $Y$. Pour cela, nous réalisons une régression simple sur la variable, grâce à la fonction `lm` de la librairie `stats`, et nous récupérons l'intercept. Les moyennes obtenues sont présentes dans le tableau suivant :
 
-```{r}
+```{r, echo = F}
 lm.mcar.cc <- lm(don.ismcar.cc$Y~1)
 lm.mar.cc <- lm(don.ismar.cc$Y~1)
 lm.mnar.cc <- lm(don.ismnar.cc$Y~1)
@@ -1230,31 +1249,31 @@ mean.mcar.cc <- lm.mcar.cc$coefficients
 mean.mar.cc <- lm.mar.cc$coefficients
 mean.mnar.cc <- lm.mnar.cc$coefficients
 
-kable(data.frame(mean.mcar.cc,mean.mar.cc,mean.mnar.cc), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+kable(data.frame(mean.mcar.cc,mean.mar.cc,mean.mnar.cc), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Y des cas complets")
 ```
 
-On remarque que les moyennes obtenues sont très différentes selon les jeux de données. Seule la première se rapproche de $0$, la vraie valeur.
+On remarque que les moyennes sont très différentes selon les jeux de données. Seule la première se rapproche de $0$, la vraie valeur.
 
 Regardons maintenant les intervalles de confiance associés :
 
-```{r}
+```{r, echo = F}
 IC <- rbind(data.frame(confint(lm.mcar.cc)), data.frame(confint(lm.mar.cc)), data.frame(confint(lm.mnar.cc)))
 
 rownames(IC) <- c("MCAR", "MAR", "MNAR")
 colnames(IC) <- c("2.5%", "97.5%")
 
-IC
+kable(data.frame(IC), col.names =c("2.5%", "97.5%"), position="H", caption = "Intervalle de confiance associé à la moyenne de Y des cas complets")
 ```
 
 Nous remarquons ici aussi que le premier jeu de données, correspondant au type MCAR, est le seul a avoir de "bons" résultats. En effet, contrairement aux autres, le $0$ est présent dans l'intervalle. Cela confirme ce que nous avions évoqué précédemment sur le biais que provoque cette méthode lorsque les données manquantes ne sont pas de type MCAR.
 
 -   Imputation simple par la moyenne
 
-Pour éviter de supprimer les obsevartions où se trouvent des données manquantes, on peut décider d'imputer des valeurs à ces endroits. Plusieurs méthodes existent pour déterminer la valeur à indiquer. La première que nous testons consiste à remplacer le Na par la moyenne de la variable. Toutes les données manquantes seront donc "remplacées" par la même valeur.
+Pour éviter de supprimer les observations où se trouvent des données manquantes, on peut décider d'imputer des valeurs à ces endroits. Plusieurs méthodes existent pour déterminer la valeur à indiquer. La première que nous testons consiste à imputer le Na par la moyenne de la variable. Toutes les données manquantes seront donc "remplacées" par la même valeur.
 
-Pour le calcul de la moyenne de la variable ensuite, nous obtenons forcément les mêmes résultats qu'auparavant.
+Pour le calcul de la moyenne de la variable ensuite, nous obtenons forcément les mêmes résultats qu'auparavant :
 
-```{r}
+```{r, echo = F}
 don.ismcar.im <- na.aggregate(don.ismcar, FUN = mean)
 don.ismar.im <- na.aggregate(don.ismar, FUN = mean)
 don.ismnar.im <- na.aggregate(don.ismnar, FUN = mean)
@@ -1267,18 +1286,18 @@ mean.mcar.im <- lm.mcar.im$coefficients
 mean.mar.im <- lm.mar.im$coefficients
 mean.mnar.im <- lm.mnar.im$coefficients
 
-kable(data.frame(mean.mcar.im,mean.mar.im,mean.mnar.im), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+kable(data.frame(mean.mcar.im,mean.mar.im,mean.mnar.im), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Y après imputation simple par la moyenne")
 ```
 
 Regardons ce que donnent les intervalles de confiance associés :
 
-```{r}
+```{r, echo = F}
 IC <- rbind(data.frame(confint(lm.mcar.im)), data.frame(confint(lm.mar.im)), data.frame(confint(lm.mnar.im)))
 
 rownames(IC) <- c("MCAR", "MAR", "MNAR")
 colnames(IC) <- c("2.5%", "97.5%")
 
-IC
+kable(data.frame(IC), col.names =c("2.5%", "97.5%"), position="H", caption = "Intervalle de confiance associé à la moyenne de Y après imputation simple par la moyenne")
 ```
 
 Les intervalles de confiance ont changés. Il y a toujours uniquement dans le premier cas (MCAR) que $0$ se situe dans l'intervalle. De plus, les autres s'éloignent de cette valeur. Cependant, leur longueur a diminué. Ainsi, ils offrent plus de précision dans leur estimation.
@@ -1289,11 +1308,58 @@ La deuxième méthode d'imputation que nous testons est l'imputation par régres
 
 Concrètement, pour réaliser cette méthode, il nous faut tirer aléatoirement une valeur autour de celle prédite par le modèle de régression. Pour cela, nous utilisons la fonction `mice` avec la méthode `norm.nob`.
 
-```{r}
+Nous visualisons ensuite les données pour s'assurer que la distribution des données imputées est globalment la même que celle des données initiales.
+
+```{r, echo = F}
 don.ismcar.irs <- complete(mice(don.ismcar, method = "norm.nob", m = 1, print = FALSE))
 don.ismar.irs <- complete(mice(don.ismar, method = "norm.nob", m = 1, print = FALSE))
 don.ismnar.irs <- complete(mice(don.ismnar, method = "norm.nob", m = 1, print = FALSE))
 
+plot(don.ismcar.irs$X[!is.na(don.ismcar$Y)], don.ismcar.irs$Y[!is.na(don.ismcar$Y)],  
+     xlim = c(0, 3), ylim = c(- 5, 10),
+     main = "Imputation simple par régression stochastique - MCAR",
+     xlab = "X", ylab = "Y")
+points(don.ismcar.irs$X[is.na(don.ismcar$Y)], don.ismcar.irs$Y[is.na(don.ismcar$Y)],   
+       col = "red")
+abline(lm(Y ~ X, don.ismcar), col = "blue", lwd = 1.5)
+legend("topleft",                                        
+       c("Valeurs observées", "Valeurs imputées", "Régression Y ~ X"),
+       pch = c(1, 1, NA),
+       lty = c(NA, NA, 1),
+       col = c("black", "red", "blue"))
+
+plot(don.ismar.irs$X[!is.na(don.ismar$Y)], don.ismar.irs$Y[!is.na(don.ismar$Y)],  
+     xlim = c(0, 3), ylim = c(- 5, 10),
+     main = "Imputation simple par régression stochastique - MAR",
+     xlab = "X", ylab = "Y")
+points(don.ismar.irs$X[is.na(don.ismar$Y)], don.ismar.irs$Y[is.na(don.ismar$Y)],   
+       col = "red")
+abline(lm(Y ~ X, don.ismar), col = "blue", lwd = 1.5)
+legend("topleft",                                        
+       c("Valeurs observées", "Valeurs imputées", "Régression Y ~ X"),
+       pch = c(1, 1, NA),
+       lty = c(NA, NA, 1),
+       col = c("black", "red", "blue"))
+
+plot(don.ismnar.irs$X[!is.na(don.ismnar$Y)], don.ismnar.irs$Y[!is.na(don.ismnar$Y)],  
+     xlim = c(0, 3), ylim = c(- 5, 10),
+     main = "Imputation simple par régression stochastique - MNAR",
+     xlab = "X", ylab = "Y")
+points(don.ismnar.irs$X[is.na(don.ismnar$Y)], don.ismnar.irs$Y[is.na(don.ismnar$Y)],   
+       col = "red")
+abline(lm(Y ~ X, don.ismnar), col = "blue", lwd = 1.5)
+legend("topleft",                                        
+       c("Valeurs observées", "Valeurs imputées", "Régression Y ~ X"),
+       pch = c(1, 1, NA),
+       lty = c(NA, NA, 1),
+       col = c("black", "red", "blue"))
+```
+
+Les différentes imputations semblent réalistes car elles suivent une distribution semblable à celles des données déjà existantes.
+
+Nous calculons ensuite les moyennes et obtenons les résultats suivants :
+
+```{r, echo = F}
 lm.mcar.irs <- lm(don.ismcar.irs$Y~1)
 lm.mar.irs <- lm(don.ismar.irs$Y~1)
 lm.mnar.irs <- lm(don.ismnar.irs$Y~1)
@@ -1302,55 +1368,73 @@ mean.mcar.irs <- lm.mcar.irs$coefficients
 mean.mar.irs <- lm.mar.irs$coefficients
 mean.mnar.irs <- lm.mnar.irs$coefficients
 
-kable(data.frame(mean.mcar.irs,mean.mar.irs,mean.mnar.irs), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+kable(data.frame(mean.mcar.irs,mean.mar.irs,mean.mnar.irs), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Y après imputation simple par régression stochastique")
 ```
 
 Cette fois-ci, c'est le deuxième cas (MAR) qui obtient le meilleur résultat car la moyenne obetnue est très proche de celle attendue.
 
 Nous pouvons regarder ce que donnent les intervalles de confiance associés :
 
-```{r}
+```{r, echo = F}
 IC <- rbind(data.frame(confint(lm.mcar.irs)), data.frame(confint(lm.mar.irs)), data.frame(confint(lm.mnar.irs)))
 
 rownames(IC) <- c("MCAR", "MAR", "MNAR")
 colnames(IC) <- c("2.5%", "97.5%")
 
-IC
+kable(data.frame(IC), col.names =c("2.5%", "97.5%"), position="H", caption = "Intervalle de confiance associé à la moyenne de Y après imputation simple par régression stochastique")
 ```
 
 Les intervalles de confiance obtenues avec cette méthode d'imputation semblent meilleurs que ceux des méthodes précédemment testées. En effet, les deux premiers contiennent $0$ et le troisième s'en rapproche. Cependant, leur longueur est plus grande que pour l'imputation avec la moyenne. Ils sont donc moins précis.
 
 -   20 imputations simples par régression stochastique
 
-La méthode précédente ayant des résultats encourageants, nous souhaitons poursuivre son étude. En effet, une valeur unique ne pouvant pas refléter l'incertitude sur la prédiction, nous allons tester de renouveller vingt fois l'imputation.
+La méthode précédente ayant des résultats encourageants, nous souhaitons poursuivre son étude. En effet, une valeur unique ne pouvant pas refléter l'incertitude sur la prédiction, nous allons tester de renouveller vingt fois l'imputation. Pour cela, nous utilisons toujours la fonction `mice` mais en précisant l'argument `m=20`.
 
-```{r}
-don.ismcar.irs20 <- complete(mice(don.ismcar, method = "norm.nob", m = 20, print = FALSE))
-don.ismar.irs20 <- complete(mice(don.ismar, method = "norm.nob", m = 20, print = FALSE))
-don.ismnar.irs20 <- complete(mice(don.ismnar, method = "norm.nob", m = 20, print = FALSE))
+Nous obtenons alors $20$ jeu de données imputés. Regardons les valeurs pour chacun d'eux, dans les trois cas que nous étudions :
 
-lm.mcar.irs20 <- lm(don.ismcar.irs20$Y~1)
-lm.mar.irs20 <- lm(don.ismar.irs20$Y~1)
-lm.mnar.irs20 <- lm(don.ismnar.irs20$Y~1)
+```{r, echo = F}
+don.ismcar.irs20 <- mice(don.ismcar, method = "norm.nob", m = 20, print = FALSE)
+don.ismar.irs20 <- mice(don.ismar, method = "norm.nob", m = 20, print = FALSE)
+don.ismnar.irs20 <- mice(don.ismnar, method = "norm.nob", m = 20, print = FALSE)
 
-mean.mcar.irs20 <- lm.mcar.irs20$coefficients
-mean.mar.irs20 <- lm.mar.irs20$coefficients
-mean.mnar.irs20 <- lm.mnar.irs20$coefficients
-
-kable(data.frame(mean.mcar.irs20,mean.mar.irs20,mean.mnar.irs20), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+stripplot(don.ismcar.irs20, pch = 20, cex = 1.2, main = "MCAR")
+stripplot(don.ismar.irs20, pch = 20, cex = 1.2, main = "MAR")
+stripplot(don.ismnar.irs20, pch = 20, cex = 1.2, main = "MNAR")
 ```
 
-Une nouvelle fois, le mécanisme MAR obtient le meilleur résultat. Nous remarquons que les valeurs sont légèrement plus éloignées de $0$. Cependant, elles incorporent l'incertidude de l'imputation des données manquantes.
+Les données imputées se trouvant en rouge, nous remarquons que chaque imputation est différente, mais respecte la distribution des données initiales.
+
+Il faut maintenant combiner les données en utilisant la fonction `pool` et on récupère la moyenne obtenue.
+
+```{r, echo  = F}
+fit_mcar <- with(don.ismcar.irs20, lm(Y~1))
+fitpool_mcar <- pool(fit_mcar)
+mean.mcar.irs20 <- fitpool_mcar$pooled[3]
+
+fit_mar <- with(don.ismar.irs20, lm(Y~1))
+fitpool_mar <- pool(fit_mar)
+mean.mar.irs20 <- fitpool_mar$pooled[3]
+
+fit_mnar <- with(don.ismnar.irs20, lm(Y~1))
+fitpool_mnar <- pool(fit_mnar)
+mean.mnar.irs20 <- fitpool_mnar$pooled[3]
+
+kable(data.frame(mean.mcar.irs20,mean.mar.irs20,mean.mnar.irs20), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Y après combinaison des 20 imputations par régression stochastique")
+```
+
+Une nouvelle fois, le mécanisme MAR obtient le meilleur résultat. Il est même plus proche de $0$ que lorsque nous avions réalisé qu'une seule imputation. C'est le cas aussi pour le mécanisme MCAR. En revanche, pour MNAR, on s'en est bien éloigné. Cependant, l'incertitude de l'imputation des données manquantes étant prise en compte, on peut considérer que ce sont des résultats plus "justes".
 
 Regardons les intervalles de confiance associés :
 
-```{r}
+PAS REUSSI avce pool
+
+```{r, echo = F}
 IC <- rbind(data.frame(confint(lm.mcar.irs20)), data.frame(confint(lm.mar.irs20)), data.frame(confint(lm.mnar.irs20)))
 
 rownames(IC) <- c("MCAR", "MAR", "MNAR")
 colnames(IC) <- c("2.5%", "97.5%")
 
-IC
+kable(data.frame(IC), col.names =c("2.5%", "97.5%"))
 ```
 
 Les conclusions sont les mêmes que pour les moyennes. En effet, les intervalles sont légèrement plus grands mais sont sensiblement répartis de la même façon par rapport à $0$.
@@ -1359,27 +1443,43 @@ Les conclusions sont les mêmes que pour les moyennes. En effet, les intervalles
 
 -   Imputation multiple par régression
 
-Enfin, nous allons tester de réaliser une nouvelle fois vingt imputations, mais cette fois-ci par régression linéaire.
+Enfin, nous allons tester de réaliser une nouvelle fois une imputation multiple. En effet, nous réalisons vingt imputations, mais cette fois-ci par régression linéaire. Nous le précisons dans le code en indiquant `method=norm` dans la fonction `mice`.
 
-```{r}
-don.ismcar.ir20 <- complete(mice(don.ismcar, method = "norm", m = 20, print = FALSE))
-don.ismar.ir20 <- complete(mice(don.ismar, method = "norm", m = 20, print = FALSE))
-don.ismnar.ir20 <- complete(mice(don.ismnar, method = "norm", m = 20, print = FALSE))
+Nous obtenons les distributions suivantes :
 
-lm.mcar.ir20 <- lm(don.ismcar.ir20$Y~1)
-lm.mar.ir20 <- lm(don.ismar.ir20$Y~1)
-lm.mnar.ir20 <- lm(don.ismnar.ir20$Y~1)
+```{r, echo = F}
+don.ismcar.ir20 <- mice(don.ismcar, method = "norm", m = 20, print = FALSE)
+don.ismar.ir20 <- mice(don.ismar, method = "norm", m = 20, print = FALSE)
+don.ismnar.ir20 <- mice(don.ismnar, method = "norm", m = 20, print = FALSE)
 
-mean.mcar.ir20 <- lm.mcar.ir20$coefficients
-mean.mar.ir20 <- lm.mar.ir20$coefficients
-mean.mnar.ir20 <- lm.mnar.ir20$coefficients
-
-kable(data.frame(mean.mcar.ir20,mean.mar.ir20,mean.mnar.ir20), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, caption = "Moyenne de Y")
+stripplot(don.ismcar.ir20, pch = 20, cex = 1.2, main = "MCAR")
+stripplot(don.ismar.ir20, pch = 20, cex = 1.2, main = "MAR")
+stripplot(don.ismnar.ir20, pch = 20, cex = 1.2, main = "MNAR")
 ```
 
-C'est encore pour le deuxième jeu de données que lon obtient le meilleur résultat. L'imputation par régression semble donc mieux adaptée pour celui-ci.
+Nous calculons enuit les moyennes et nous obtenons les résulatst suivants :
 
-Regardons si cela ce confirme pour les intervalles de confiance associés aux moyennes :
+```{r, echo = F}
+fit_mcar <- with(don.ismcar.ir20, lm(Y~1))
+fitpool_mcar <- pool(fit_mcar)
+mean.mcar.ir20 <- fitpool_mcar$pooled[3]
+
+fit_mar <- with(don.ismar.ir20, lm(Y~1))
+fitpool_mar <- pool(fit_mar)
+mean.mar.ir20 <- fitpool_mar$pooled[3]
+
+fit_mnar <- with(don.ismnar.ir20, lm(Y~1))
+fitpool_mnar <- pool(fit_mnar)
+mean.mnar.ir20 <- fitpool_mnar$pooled[3]
+
+kable(data.frame(mean.mcar.ir20,mean.mar.ir20,mean.mnar.ir20), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Y après combinaison des 20 imputations par régression")
+```
+
+C'est encore pour le deuxième jeu de données que l'on obtient le meilleur résultat. L'imputation par régression semble donc mieux adaptée pour le mécanisme MAR.
+
+Regardons si cela se confirme pour les intervalles de confiance associés aux moyennes :
+
+PAS REUSSI non plus du coup (idem que stochastique)
 
 ```{r}
 IC <- rbind(data.frame(confint(lm.mcar.ir20)), data.frame(confint(lm.mar.ir20)), data.frame(confint(lm.mnar.ir20)))
@@ -1387,14 +1487,157 @@ IC <- rbind(data.frame(confint(lm.mcar.ir20)), data.frame(confint(lm.mar.ir20)),
 rownames(IC) <- c("MCAR", "MAR", "MNAR")
 colnames(IC) <- c("2.5%", "97.5%")
 
-IC
+kable(data.frame(IC), col.names =c("2.5%", "97.5%"))
 ```
 
 Nous observons que la vraie valeur est située dans les deux premiers intervalles uniquement. De plus, le deuxième semble légèrement plus centré autour de cette valeur.
 
-***NOTE** : J'ai limpression de me répéter de ouf, je sais pas quoi dire d'autres.*
+#### Comparaison des stratégies
 
-# Simulation de données manquantes sur le jeu de données `mites`.
+Afin de comparer chacune des méthodes précédentes, nous allons recommencer toutes les procédures $200$ fois. Cela nous permettra d'estimer le biais commis sur l'estimation de la moyenne ainsi que la longueur moyenne et le taux de couverture de l'intervalle de confiance.
+
+```{r, echo = F}
+mean.mcar.cc <- c(1:200)
+mean.mar.cc <- c(1:200)
+mean.mnar.cc <- c(1:200)
+
+mean.mcar.im <- c(1:200)
+mean.mar.im <- c(1:200)
+mean.mnar.im <- c(1:200)
+
+mean.mcar.irs <- c(1:200)
+mean.mar.irs <- c(1:200)
+mean.mnar.irs <- c(1:200)
+
+IC.mcar.cc <- matrix(ncol = 2, nrow = 200)
+IC.mar.cc <- matrix(ncol = 2, nrow = 200)
+IC.mnar.cc <- matrix(ncol = 2, nrow = 200)
+
+IC.mcar.im <- matrix(ncol = 2, nrow = 200)
+IC.mar.im <- matrix(ncol = 2, nrow = 200)
+IC.mnar.im <- matrix(ncol = 2, nrow = 200)
+
+IC.mcar.irs <- matrix(ncol = 2, nrow = 200)
+IC.mar.irs <- matrix(ncol = 2, nrow = 200)
+IC.mnar.irs <- matrix(ncol = 2, nrow = 200)
+
+for (i in 1:200){
+  don <- rmvnorm(n=n, mean = mu, sigma = matcov)
+  colnames(don) <- c("X", "Y") 
+  
+  #MCAR
+  don.ismcar = don
+  ismcar <- sample(c(T,F), size = n, prob = c(0.35, 0.65), replace = TRUE)
+  don.ismcar[ismcar, "Y"] <- NA
+  don.ismcar <- as.data.frame(don.ismcar)
+  
+  #MAR
+  don.ismar <- don
+  ismar <- sapply(don.ismar[,"X"], FUN=function(xx){
+    prob <- pnorm(1.2*xx-.5) 
+    res <- sample(c(T,F), size = 1, prob = c(prob,1-prob))
+    return (res)
+  })
+  don.ismar[ismar,"Y"] <- NA 
+  don.ismar <- as.data.frame(don.ismar)
+  
+  #MNAR
+  don.ismnar <- don
+  ismnar <- sapply(don.ismnar[,"Y"], FUN=function(xx){
+    prob <- pnorm(1.2*xx-.5) 
+    res <- sample(c(T,F), size = 1, prob = c(prob,1-prob))
+    return (res)
+  })
+  don.ismnar[ismnar,"Y"] <- NA 
+  don.ismnar <- as.data.frame(don.ismnar)
+  
+  #Cas complet
+  don.ismcar.cc <- na.omit(don.ismcar)
+  don.ismar.cc <- na.omit(don.ismar)
+  don.ismnar.cc <- na.omit(don.ismnar)
+  
+  lm.mcar.cc <- lm(don.ismcar.cc$Y~1)
+  lm.mar.cc <- lm(don.ismar.cc$Y~1)
+  lm.mnar.cc <- lm(don.ismnar.cc$Y~1)
+
+  mean.mcar.cc[i] <- lm.mcar.cc$coefficients
+  mean.mar.cc[i] <- lm.mar.cc$coefficients
+  mean.mnar.cc[i] <- lm.mnar.cc$coefficients
+  
+  IC.mcar.cc[i,] <- confint(lm.mcar.cc)
+  IC.mar.cc[i,] <- confint(lm.mar.cc)
+  IC.mnar.cc[i,] <- confint(lm.mnar.cc)
+  
+  #Imputation par la moyenne
+  don.ismcar.im <- na.aggregate(don.ismcar, FUN = mean)
+  don.ismar.im <- na.aggregate(don.ismar, FUN = mean)
+  don.ismnar.im <- na.aggregate(don.ismnar, FUN = mean)
+
+  lm.mcar.im <- lm(don.ismcar.im$Y~1)
+  lm.mar.im <- lm(don.ismar.im$Y~1)
+  lm.mnar.im <- lm(don.ismnar.im$Y~1)
+
+  mean.mcar.im[i] <- lm.mcar.im$coefficients
+  mean.mar.im[i] <- lm.mar.im$coefficients
+  mean.mnar.im[i] <- lm.mnar.im$coefficients
+  
+  IC.mcar.im[i,] <- confint(lm.mcar.im)
+  IC.mar.im[i,] <- confint(lm.mar.im)
+  IC.mnar.im[i,] <- confint(lm.mnar.im)
+  
+  #Imputation par régression stochastique
+  don.ismcar.irs <- complete(mice(don.ismcar, method = "norm.nob", m = 1, print = FALSE))
+  don.ismar.irs <- complete(mice(don.ismar, method = "norm.nob", m = 1, print = FALSE))
+  don.ismnar.irs <- complete(mice(don.ismnar, method = "norm.nob", m = 1, print = FALSE))
+  
+  lm.mcar.irs <- lm(don.ismcar.irs$Y~1)
+  lm.mar.irs <- lm(don.ismar.irs$Y~1)
+  lm.mnar.irs <- lm(don.ismnar.irs$Y~1)
+
+  mean.mcar.irs[i] <- lm.mcar.irs$coefficients
+  mean.mar.irs[i] <- lm.mar.irs$coefficients
+  mean.mnar.irs[i] <- lm.mnar.irs$coefficients
+  
+  IC.mcar.irs[i,] <- confint(lm.mcar.irs)
+  IC.mar.irs[i,] <- confint(lm.mar.irs)
+  IC.mnar.irs[i,] <- confint(lm.mnar.irs)
+}
+```
+
+```{r, echo = F}
+par(mfrow=c(3,1))
+plot(mean.mcar.cc, type = 'l')
+plot(mean.mar.cc, type = 'l')
+plot(mean.mnar.cc, type = 'l')
+```
+
+```{r, echo = F}
+mean.mcar.cc 
+mean.mar.cc 
+mean.mnar.cc 
+
+mean.mcar.im
+mean.mar.im 
+mean.mnar.im  
+
+mean.mcar.irs 
+mean.mar.irs 
+mean.mnar.irs
+
+IC.mcar.cc 
+IC.mar.cc 
+IC.mnar.cc 
+
+IC.mcar.im 
+IC.mar.im 
+IC.mnar.im 
+
+IC.mcar.irs 
+IC.mar.irs 
+IC.mnar.irs 
+```
+
+## 2. Scénarios NA sur le jeu de données `mites`
 
 ```{r}
 #install.packages("mice")

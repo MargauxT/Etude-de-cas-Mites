@@ -1428,14 +1428,6 @@ Regardons les intervalles de confiance associés :
 
 PAS REUSSI avce pool
 
-```{r, echo = F}
-IC <- rbind(data.frame(confint(lm.mcar.irs20)), data.frame(confint(lm.mar.irs20)), data.frame(confint(lm.mnar.irs20)))
-
-rownames(IC) <- c("MCAR", "MAR", "MNAR")
-colnames(IC) <- c("2.5%", "97.5%")
-
-kable(data.frame(IC), col.names =c("2.5%", "97.5%"))
-```
 
 Les conclusions sont les mêmes que pour les moyennes. En effet, les intervalles sont légèrement plus grands mais sont sensiblement répartis de la même façon par rapport à $0$.
 
@@ -1481,14 +1473,6 @@ Regardons si cela se confirme pour les intervalles de confiance associés aux mo
 
 PAS REUSSI non plus du coup (idem que stochastique)
 
-```{r}
-IC <- rbind(data.frame(confint(lm.mcar.ir20)), data.frame(confint(lm.mar.ir20)), data.frame(confint(lm.mnar.ir20)))
-
-rownames(IC) <- c("MCAR", "MAR", "MNAR")
-colnames(IC) <- c("2.5%", "97.5%")
-
-kable(data.frame(IC), col.names =c("2.5%", "97.5%"))
-```
 
 Nous observons que la vraie valeur est située dans les deux premiers intervalles uniquement. De plus, le deuxième semble légèrement plus centré autour de cette valeur.
 
@@ -1605,7 +1589,7 @@ for (i in 1:200){
 ```
 
 ```{r, echo = F}
-par(mfrow=c(3,1))
+#par(mfrow=c(3,1))
 plot(mean.mcar.cc, type = 'l')
 plot(mean.mar.cc, type = 'l')
 plot(mean.mnar.cc, type = 'l')

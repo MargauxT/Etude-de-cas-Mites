@@ -1740,9 +1740,77 @@ Ce dispositf MNAR se rapproche plus du dispositif MAR dans la description des do
 library("DescTools")
 ?CramerV
 
-tab <- table(mites$Substrate, mites$Shrub)
+tab <- table(amp.mcar$amp$Galumna, amp.mcar$amp$pa)
+names(amp.mcar$amp)
 CramerV(tab)
 ```
+
+
+**Analyse muldimentionnelle**
+`MCA` du package `FactoMineR` pour l'analyse multidimensionnelle
+```{r}
+library("FactoMineR")
+?MCA
+
+```
+Possible de faire MCA avec les données manquantes ???
+
+```{r}
+install.packages("gtsummary")
+library(gtsummary)
+install.packages("flextable")
+library(flextable)
+
+amp.mcar$amp %>% 
+    tbl_summary() # Je comprends pas tout
+```
+
+
+### Imputer les données manquanntes 
+
+Nous allons maintenant imputer les données manquantes sur les 3 dispositifs que nous avons crés précédement. 
+
+**Imputation simple**
+(Moyenne, médiane, mode, LOVC, kNN, loess, SVD, missForests -> faire les méthodes adaptées)
+
+#1. Par la moyenne et la médiane
+
+Il me semble que on ne peux pas faire l'imputation par la moyenne et la médiane car nous avons des variables qualitatives ce n'est donc pas possible. A vérifier mais cela me parait logique de pas pouvoir faire de moyenne sur une variable qualitative comme `Topo`. Cela remplace avec des valeurs numériques au lieu de valeurs qualitatives.
+
+MCAR
+```{r}
+# chargement de la bibliothèque
+library(Hmisc)
+?impute
+dat.moy.mcar=impute(amp.mcar$amp, what=mean)
+as.matrix(dat.moy.mcar)
+```
+
+#2. Mode
+
+MCAR
+```{r}
+# chargement de la bibliothèque
+library(Hmisc)
+?impute
+dat.moy=impute(amp.mar$amp, fun=mean)
+as.matrix(dat.moy)
+```
+
+MAR
+```{r}
+
+```
+
+MNAR
+```{r}
+
+```
+
+**Imputation multiple** 
+avec `mice`
+
+
 
 \newpage
 

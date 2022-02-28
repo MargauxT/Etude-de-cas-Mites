@@ -39,6 +39,12 @@ library(bookdown)
 library(mice)
 library(VIM)
 library(lattice)
+library(DescTools)
+library(FactoMineR)
+library(Hmisc)
+library(gtsummary)
+library(flextable)
+library(base)
 ```
 
 \clearpage
@@ -1804,172 +1810,246 @@ Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet,
 
 ## 2. Scénarios NA sur le jeu de données `mites`
 
-```{r}
-#install.packages("mice")
-library("mice")
+Nous allons dans un premier temps générer 10% de données manquantes sur notre jeu de données `mites` suivant les 3 catégories utilisées precedement, MCAR, MAR et MNAR. Nous allons utiliser la fonction `ampute` du package `mice`. Pour utiliser cette fonction, nous allons uniquement nous concentrer sur les variables quantitatives de notre jeu de données `mites` et ainsi supprimer les variables qualitatives, `Substrate`, `Shrub` et `Topo` et la variable binaire `pa`.
+
+```{r, include=FALSE}
+mites1 <- mites[,-c(7,8,9,2)]
+mites1
 ```
 
-### **Titre**
+```{r}
+str(mites1)
+```
 
-Nous allons dans un premier temps générer 10% de données manquantes sur notre jeu de données `mites` suivant les 3 catégories utilisées precedement, MCAR, MAR et MNAR. Nous allons utiliser la fonction `ampute` du package `mice`.
+L'utilisation de la fonction `ampute` necessite une attention particuliere. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seul de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes.
+
+```{r}
+amp.mcar1 = ampute(mites1, prop = 0.10, mech = "MCAR")
+dim(mites1)
+countNA(amp.mcar1$amp)
+```
+
+En cherchant un peu plus loin, nous avons remarqué que l'argument `prop` signifie la proportion de lignes incompletes dans notre jeu de données. Nous avons 70 observations pour 5 variables soit 350 données (\~350 cellules). Nous avons donc pensé qu'il etait préferable de générer 10% de données manquantes sur l'ensemble de nos données, soit 10% de 350 données ce qui equivaut à +/- 35 données manquantes. Pour cela, nous devons utiliser l'argument `bycases` comme `FALSE`. En effet, l'argument `bycases` étant `FALSE` signifie que la proportion de données manquantes est définie en termes de cellules et non en terme de lignes, qui est la valeur par défault. Pour spécifier les 3 différents méchanismes MCAR, MAR, MNAR nous utilisons l'argument `mech`.
 
 -   Mécanisme **MCAR** (**M**issing **C**ompletely **A**t **R**andom)
 
 ```{r}
-amp.mcar = ampute(mites, prop = 0.10, mech = "MCAR")
+amp.mcar = ampute(mites1, prop = 0.10, mech = "MCAR", bycases = FALSE)
+countNA(amp.mcar$amp)
 ```
 
 -   Mécanisme **MAR** (**M**issing **A**t **R**andom)
 
 ```{r}
-amp.mar = ampute(mites, prop = 0.10, mech = "MAR")
-
+amp.mar = ampute(mites1, prop = 0.10, mech = "MAR", bycases = FALSE)
+countNA(amp.mar$amp)
 ```
 
 -   Mécanisme **MNAR** (**M**issing **N**ot **A**t **R**andom)
 
 ```{r}
-amp.mnar = ampute(mites, prop = 0.10, mech = "MNAR")
+amp.mnar = ampute(mites1, prop = 0.10, mech = "MNAR", bycases = FALSE)
+countNA(amp.mnar$amp)
 ```
+```{r, echo = F}
+a <- sum(is.na(amp.mcar$amp))/(nrow(amp.mcar$amp)*ncol(amp.mcar$amp))
+b <- sum(is.na(amp.mar$amp))/(nrow(amp.mar$amp)*ncol(amp.mar$amp))
+c <- sum(is.na(amp.mnar$amp))/(nrow(amp.mnar$amp)*ncol(amp.mnar$amp))
 
-```{r}
-kable(data.frame(c((amp.mnar$prop), (amp.mar$prop),(amp.mcar$prop)),row.names=c("MNAR", "MAR", "MCAR")), col.names=c("Proportion de données manquantes"))
+kable(data.frame(a, b, c), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Proportion de données manquantes")
+
 ```
-
-On a bien 10% de données manquantes générées pour les 3 dispositifs.
+Nous avons donc une proportion de ~10% de données manquantes générées.
 
 ### Analyse exploratoire
 
-```{r}
-#install.packages("funModeling")
-#install.packages("VIM")
-library("VIM")
-library("funModeling")
-```
-
-Sites importants : <https://delladata.fr/decrire-description-descriptives/> <https://mran.microsoft.com/snapshot/2017-04-24/web/packages/mice/vignettes/ampute.html>
-
-Explorer les 3 dispositifs de données manquantes créés. On pourra utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée, `CramerV` du package `DescTools` pour l'analyse bivariée, `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle
+Nous allons maintenant explorer et analyser les 3 dispositifs de données manquantes créés précedemment. Dans un premier temps, nous ferons une analyse univariée, puis une analyse bivariée et pour finir nous ferons une analyse muldimentionnelle. 
 
 **Analyse univariée**
 
-MCAR
+Nous allons utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée.
 
-```{r}
-#install.packages("VIM")
-library("VIM")
+**MCAR**
+```{r, echo = F}
 aggr(amp.mcar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
-                  sortVars=TRUE,
+                  sortVars=FALSE,
                   labels=names(amp.mcar$amp),
                   cex.axis=.7, gap=3,
-                  ylab=c("Histogram of missing data","Pattern"))
-
+                  ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
+Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes, soit 50% des lignes dans notre cas. Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple, 11,4% de lignes qui contiennent des données manquantes pour la variable "WatrCont".
 
-(Explication tirées du site delladata)
-
-Les colonnes représentent les variables, les lignes représentent les types de situations dans le data frame. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes (90% des lignes). Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple 2,9% pour la varible "Topo".
-
-MAR
-
-```{r}
+**MAR**
+```{r, echo = F}
 aggr(amp.mar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
-                  sortVars=TRUE,
+                  sortVars=FALSE,
                   labels=names(amp.mar$amp),
                   cex.axis=.7, gap=3,
-                  ylab=c("Histogram of missing data","Pattern"))
+                  ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
+On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas. 
 
-Plusieurs cases rouges représentent les observations pour lesquelles les valeurs dans le data frame sont manquantes conjointement pour les variables concernées. Par exemple, 2,9% des lignes, ont une donnée manquante à la fois sur les variables "Substrate", "Shrub", "Topo" et "Prop". On observe qu'il n'y a pas de ligne qui ne comportent pas de données manquantes, en comparaison avec le dispositif MCAR. Autrement dit, chaque ligne contient des données manquantes.
-
-MNAR
-
-```{r}
+**MNAR**
+```{r, echo = F}
 aggr(amp.mnar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
-                  sortVars=TRUE,
+                  sortVars=FALSE,
                   labels=names(amp.mnar$amp),
                   cex.axis=.7, gap=3,
-                  ylab=c("Histogram of missing data","Pattern"))
+                  ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
-
-Ce dispositf MNAR se rapproche plus du dispositif MAR dans la description des données manquantes. En effet, chaque ligne contient aussi des données manquantes. On observe, de plus, que 100% des variables "Substrate", "Shrub" et "Topo" sont manquantes, comme dans le dispositif MAR.
+Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes. 
 
 **Analyse bivariée**
 
-`CramerV` du package `DescTools` pour l'analyse bivariée
+Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`.
+Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le v de Cramer se rapproche de 1, plus l'intensité de la relation est forte.? Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
 
-```{r}
-library("DescTools")
-?CramerV
+**MCAR**
+Nous avons vu que dans le dispositif MCAR, les variables `SubsDens` et `prop` sont les deux variables ayant le plus de données manquantes. Nous allons donc voir si ces 2 variables ont une forte relation. Nous allons de plus, tester sur différentes paires de variables.
+```{r, echo = F}
+tab <- table(amp.mcar$amp$SubsDens, amp.mcar$amp$prop, useNA= "always")
+c1 <- CramerV(tab)
+tab1 <- table(amp.mcar$amp$prop, amp.mcar$amp$Galumna, useNA= "always")
+c2 <- CramerV(tab1)
+tab2 <- table(amp.mcar$amp$SubsDens, amp.mcar$amp$Galumna, useNA= "always")
+c3 <- CramerV(tab2)
+tab3 <- table(amp.mcar$amp$WatrCont, amp.mcar$amp$totalabund, useNA= "always")
+c4 <- CramerV(tab2)
 
-tab <- table(amp.mcar$amp$Galumna, amp.mcar$amp$pa)
-names(amp.mcar$amp)
-CramerV(tab)
+kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/SubsDens", "WatrCont/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MCAR)")
 ```
 
-**Analyse muldimentionnelle** `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle
+**MAR**
+```{r, echo = F}
+tab <- table(amp.mar$amp$SubsDens, amp.mar$amp$prop, useNA= "always")
+c1 <- CramerV(tab)
+tab1 <- table(amp.mar$amp$prop, amp.mar$amp$Galumna, useNA= "always")
+c2 <- CramerV(tab1)
+tab2 <- table(amp.mar$amp$WatrCont, amp.mar$amp$Galumna, useNA= "always")
+c3 <- CramerV(tab2)
+tab3 <- table(amp.mar$amp$SubsDens, amp.mar$amp$totalabund, useNA= "always")
+c4 <- CramerV(tab3)
 
-```{r}
-library("FactoMineR")
-?MCA
-
+kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/WatrCont", "SubsDens/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MAR)")
 ```
 
-Possible de faire MCA avec les données manquantes ???
+**MNAR**
+```{r, echo = F}
+tab <- table(amp.mnar$amp$SubsDens, amp.mnar$amp$prop, useNA= "always")
+c1 <- CramerV(tab)
+tab1 <- table(amp.mnar$amp$prop, amp.mnar$amp$Galumna, useNA= "always")
+c2 <- CramerV(tab1)
+tab2 <- table(amp.mnar$amp$WatrCont, amp.mnar$amp$Galumna, useNA= "always")
+c3 <- CramerV(tab2)
+tab3 <- table(amp.mnar$amp$SubsDens, amp.mnar$amp$totalabund, useNA= "always")
+c4 <- CramerV(tab3)
 
-```{r}
-#install.packages("gtsummary")
-library(gtsummary)
-#install.packages("flextable")
-library(flextable)
+kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/WatrCont", "SubsDens/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MNAR)")
+```
+Le V de Cramer est tres proche de 1 pour chaque paire de variable et chaque dispositif, ce qui signifie que les variables ont une forte relation 2 à 2. 
 
-amp.mcar$amp %>% 
-    tbl_summary() # Je comprends pas tout
+
+**Analyse muldimentionnelle** 
+
+Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle.
+L’analyse des correspondances multiples est une technique descriptive visant à résumer l’information contenu dans un grand nombre de variables afin de faciliter l’interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles.
+L’analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données.
+
+**MCAR**
+```{r, echo = F}
+mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
+mis.ind[is.na(amp.mcar$amp)] <- "m"
+dimnames(mis.ind) <- dimnames(amp.mcar$amp)
+resMCA <- MCA(mis.ind)
+plot(resMCA,invis="ind",title="MCA graph of the categories")
+```
+Le nom des variable finissant par "-m" signifie les données manquantes pour cette variables, contrairement au nom des variables se termiant par "-o". 
+
+**MAR**
+```{r, echo = F}
+mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
+mis.ind[is.na(amp.mar$amp)] <- "m"
+dimnames(mis.ind) <- dimnames(amp.mar$amp)
+resMCA <- MCA(mis.ind)
+plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-### Imputer les données manquanntes
+**MNAR**
+```{r, echo = F}
+mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
+mis.ind[is.na(amp.mnar$amp)] <- "m"
+dimnames(mis.ind) <- dimnames(amp.mnar$amp)
+resMCA <- MCA(mis.ind)
+plot(resMCA,invis="ind",title="MCA graph of the categories")
+```
+DONT KNOW
+
+Je sais pas/plus comment lire ces graphes. Quoi en dire ??? -> Rien sur le diapo de Lise
+ 
+ 
+### Imputation les données manquantes
 
 Nous allons maintenant imputer les données manquantes sur les 3 dispositifs que nous avons crés précédement.
 
-**Imputation simple** (Moyenne, médiane, mode, LOVC, kNN, loess, SVD, missForests -\> faire les méthodes adaptées)
+**Imputation simple** 
+(Moyenne, médiane, mode, LOVC, kNN, loess, SVD, missForests -\> faire les méthodes adaptées)
 
-#1. Par la moyenne et la médiane
+#1. Par la moyenne
 
-Il me semble que on ne peux pas faire l'imputation par la moyenne et la médiane car nous avons des variables qualitatives ce n'est donc pas possible. A vérifier mais cela me parait logique de pas pouvoir faire de moyenne sur une variable qualitative comme `Topo`. Cela remplace avec des valeurs numériques au lieu de valeurs qualitatives.
-
-MCAR
-
+**MCAR**
 ```{r}
-# chargement de la bibliothèque
-library(Hmisc)
-?impute
 dat.moy.mcar=impute(amp.mcar$amp, what=mean)
 as.matrix(dat.moy.mcar)
 ```
 
-#2. Mode
-
-MCAR
-
+**MAR**
 ```{r}
-# chargement de la bibliothèque
-library(Hmisc)
-?impute
-dat.moy=impute(amp.mar$amp, fun=mean)
-as.matrix(dat.moy)
+dat.moy.mar=impute(amp.mar$amp, what=mean)
+as.matrix(dat.moy.mar)
 ```
 
-MAR
+**MNAR**
+```{r}
+dat.moy.mnar=impute(amp.mnar$amp, what=mean)
+as.matrix(dat.moy.mnar)
+```
 
+#2. Par la médiane
+
+**MCAR**
+```{r}
+dat.med.mcar=impute(amp.mcar$amp, fun=median)
+as.matrix(dat.med.mcar)
+```
+
+**MAR**
+```{r}
+dat.med.mar=impute(amp.mar$amp, fun=median)
+as.matrix(dat.med.mar)
+```
+
+**MNAR**
+```{r}
+dat.med.mnar=impute(amp.mnar$amp, fun=median)
+as.matrix(dat.med.mnar)
+```
+
+#3. Mode
+
+**MCAR**
 ```{r}
 
 ```
 
-MNAR
+**MAR**
+```{r}
 
+```
+
+**MNAR**
 ```{r}
 
 ```
@@ -1980,10 +2060,10 @@ MNAR
 
 # Références bibliographiques
 
-<https://delladata.fr/>  
-<https://mran.microsoft.com/snapshot/2017-04-24/web/packages/mice/vignettes/ampute.html>  
-<https://www.rdocumentation.org/>  
-\  
+<https://delladata.fr/>\
+<https://mran.microsoft.com/snapshot/2017-04-24/web/packages/mice/vignettes/ampute.html>\
+<https://www.rdocumentation.org/>\
+ 
 
 ---
 nocite: |

@@ -1911,7 +1911,7 @@ Nous allons maintenant explorer et analyser les 3 dispositifs de données manqua
 
 Nous allons utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée.
 
-```{r, echo = F, fig.cap = MCAR}
+```{r, echo = F, fig.cap = "MCAR"}
 aggr(amp.mcar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1920,9 +1920,9 @@ aggr(amp.mcar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
-Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes, soit 50% des lignes dans notre cas. Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple, 11,4% de lignes qui contiennent des données manquantes pour la variable "WatrCont".
+Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes, soit 50% des lignes dans notre cas. Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple, 11,4% de lignes qui contiennent des données manquantes pour la variable `WatrCont`.
 
-```{r, echo = F, fig.cap = MAR}
+```{r, echo = F, fig.cap = "MAR"}
 aggr(amp.mar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1933,7 +1933,7 @@ aggr(amp.mar$amp, col=c('navyblue','red'),
 
 On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas. 
 
-```{r, echo = F, fig.cap = MNAR}
+```{r, echo = F, fig.cap = "MNAR"}
 aggr(amp.mnar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1999,7 +1999,8 @@ L’analyse des correspondances multiples est une technique descriptive visant �
 L’analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données.
 Le nom des variable finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o". 
 
-```{r, echo = F, fig.height=4, fig.cap=MCAR}
+```{r, echo = F, fig.cap= "MCAR"}
+par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
 mis.ind[is.na(amp.mcar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mcar$amp)
@@ -2007,7 +2008,8 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=4, fig.cap=MAR}
+```{r, echo = F, fig.cap= "MAR"}
+par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
 mis.ind[is.na(amp.mar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mar$amp)
@@ -2015,7 +2017,8 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=4, fig.cap=MNAR}
+```{r, echo = F, fig.cap= "MNAR"}
+par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
 mis.ind[is.na(amp.mnar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mnar$amp)
@@ -2056,6 +2059,7 @@ dat.moy.mnar=impute(amp.mnar$amp, what=mean)
 \  
 
 Nous utilisons aussi la fonction `impute` du package `Hmisc`.
+
 **MCAR**
 ```{r}
 dat.med.mcar=impute(amp.mcar$amp, fun=median)
@@ -2147,7 +2151,13 @@ Comme pour la méthode Loess, nous remarquons que les variables `Galumna` et `to
 
 A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 
-**Imputation multiple** avec `mice`
+**Imputation multiple** 
+
+L'utilisation de la fonction `mice` suppose que les données soient MAR.
+A chaque variable est associé un modèle d’imputation, conditionnellement aux autres variables du jeu de données : si on a $X_k$ variables, les données manquantes de la variable $X_i$ seront remplacées par les prédictions d’un modèle créé à partir des autres variables. 
+
+
+
 
 \newpage
 

@@ -45,6 +45,10 @@ library(Hmisc)
 library(gtsummary)
 library(flextable)
 library(base)
+library(zoo)
+library(bcv)
+library(missForest)
+library(locfit)
 ```
 
 \clearpage
@@ -1851,6 +1855,7 @@ countNA(amp.mar$amp)
 amp.mnar = ampute(mites1, prop = 0.10, mech = "MNAR", bycases = FALSE)
 countNA(amp.mnar$amp)
 ```
+
 ```{r, echo = F}
 a <- sum(is.na(amp.mcar$amp))/(nrow(amp.mcar$amp)*ncol(amp.mcar$amp))
 b <- sum(is.na(amp.mar$amp))/(nrow(amp.mar$amp)*ncol(amp.mar$amp))
@@ -1995,9 +2000,10 @@ Je sais pas/plus comment lire ces graphes. Quoi en dire ??? -> Rien sur le diapo
 Nous allons maintenant imputer les données manquantes sur les 3 dispositifs que nous avons crés précédement.
 
 **Imputation simple** 
-(Moyenne, médiane, mode, LOVC, kNN, loess, SVD, missForests -\> faire les méthodes adaptées)
 
 #1. Par la moyenne
+
+Nous utilisons  la fonction `impute` du package `Hmisc`.
 
 **MCAR**
 ```{r}
@@ -2019,6 +2025,7 @@ as.matrix(dat.moy.mnar)
 
 #2. Par la médiane
 
+Nous utilisons aussi la fonction `impute` du package `Hmisc`.
 **MCAR**
 ```{r}
 dat.med.mcar=impute(amp.mcar$amp, fun=median)
@@ -2037,22 +2044,74 @@ dat.med.mnar=impute(amp.mnar$amp, fun=median)
 as.matrix(dat.med.mnar)
 ```
 
-#3. Mode
+#3. LOVF (Last observation carries forward)
+
+Cette méthode remplace la valeur manquante par la dernière valeur disponible (cas de données longitudinales). Cependant, cette méthode peut donner des résultats biaisées, même en présence de MCAR. Nous utilisons la fonction `na.locf` du package `zoo`.
 
 **MCAR**
 ```{r}
-
+dat.locf=na.locf(amp.mcar$amp,na.rm=FALSE)
+dat.locf=na.locf(dat.locf,na.rm=FALSE,
+   fromLast=TRUE)
 ```
 
 **MAR**
 ```{r}
-
+dat.locf=na.locf(amp.mar$amp,na.rm=FALSE)
+dat.locf=na.locf(dat.locf,na.rm=FALSE,
+   fromLast=TRUE)
 ```
 
 **MNAR**
 ```{r}
-
+dat.locf=na.locf(amp.mnar$amp,na.rm=FALSE)
+dat.locf=na.locf(dat.locf,na.rm=FALSE,
+   fromLast=TRUE)
 ```
+
+#4. k plus proches voisins kNN
+
+L’idée de cette méthode est de calculer les distances entre observations, et d’attribuer aux données manquantes la moyenne des valeurs observées chez les k plus proches voisins. Nous utilisons la fonction `kNN` du package `VIM`.
+
+**MCAR**
+```{r}
+dat.kNN=kNN(amp.mcar$amp, k=5, imp_var=FALSE)
+```
+
+**MAR**
+```{r}
+dat.kNN=kNN(amp.mar$amp, k=5, imp_var=FALSE)
+```
+
+**MNAR**
+```{r}
+dat.kNN=kNN(amp.mnar$amp, k=5, imp_var=FALSE)
+```
+
+#5. Loess (Régression locale)
+
+Cette méthode consiste à construire un polynôme de degré faible par méthode des moindres carrés pondérés en fonction de la proximité entre les observations jugées semblables à celle sur laquelle nous voulons procéder à l’imputation. 
+
+**MCAR**
+```{r}
+dat.imputed=rbind(colnames(amp.mcar$amp),amp.mcar$amp)
+indices=1:nrow(amp.mcar$amp)
+dat.loess= apply(dat.imputed, 2, function(j) {
+predict(locfit(j[-1] ~ indices), indices)
+})
+```
+Avec cette méthode nous remarquons que la variable `Galumna` et `totalabund` ne sont plus des valeurs entières. Nous prenons donc pas cette méthode en considération dans notre analyse.
+
+#6. missForests
+
+**MCAR**
+```{r}
+dat.missForest<-missForest(amp.mcar$amp,maxiter=10,
+        ntree = 200, variablewise = TRUE)$ximp
+```
+Comme pour la méthode Loess, nous remarquons que la variable `Galumna` et `totalabund` ne sont plus des valeurs entières. 
+
+A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 
 **Imputation multiple** avec `mice`
 

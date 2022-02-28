@@ -1088,9 +1088,9 @@ Le but initial de notre étude était de décrire le jeu de données sur les mit
 
 # Données manquantes
 
-## 1. Scénarios NA sur un jeu de données simulées
+## Scénarios NA sur un jeu de données simulées
 
-#### Simulations
+### Simulations
 
 Dans le but d'étudier différents scénarios d'imputation de données manquantes, nous commençons par simuler $n=100$ réalisations d'un vecteur gaussien $(X,Y)$ de moyenne $\mu=\begin{pmatrix} 0 \\ 0 \end{pmatrix}$ et de variance $\begin{pmatrix} 1 & 0.5 \\ 0.5 & 1 \end{pmatrix}$. Pour cela, on utilise la fonction `rmvnorm` du package `mvtnorm`.
 
@@ -1167,7 +1167,7 @@ summary(don.ismnar)
 
 Notons que ce dernier type de données manquantes est plus complexe à traiter par la suite.
 
-#### Analyse
+### Analyse
 
 Maintenant que nous avons ajouté de trois manières différentes des valeurs manquantes sur la variable $Y$, nous allons analyser les jeux de données obtenus. Pour cela, nous commençons par les visualiser en entier. Nous utilisons la fonction `vis_miss` du package `visdat`.
 
@@ -1194,7 +1194,7 @@ aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MNAR") + theme(plot.
 
 Nous remarquons que pour la deuxième configuration, les valeurs manquantes sont plutôt associées à un $X$ positif, tandis que dans les deux autres cas, elles sont reparties dans les négatifs également.
 
-#### Estimation de la moyenne de $Y$ et de l'intervalle de confiance associé
+### Estimation de la moyenne de $Y$ et de l'intervalle de confiance associé
 
 Nous voulons à présent étudier nos jeux de données et déterminer la moyenne de la variable $Y$, ainsi que l'intervalle de confiance associé pour chacun d'entre eux. Nous pourrons ensuite comparer les résultats obtenus.
 
@@ -1508,7 +1508,7 @@ kable(data.frame(IC), col.names =c("2.5%", "97.5%"), position="H", caption = "In
 
 Nous observons que la vraie valeur est située dans les deux premiers intervalles uniquement. De plus, le deuxième semble être plus centré autour de $0$.
 
-#### Comparaison des stratégies
+### Comparaison des stratégies
 
 Afin de comparer chacune des méthodes précédentes, nous allons recommencer toutes les procédures $200$ fois. Cela nous permettra d'estimer le biais commis sur l'estimation de la moyenne ainsi que la longueur moyenne et le taux de couverture de l'intervalle de confiance.
 
@@ -1799,6 +1799,8 @@ kable(data.frame(L), col.names = c("MCAR", "MAR", "MNAR"), position="H", caption
 Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longeur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
 
 **Conclusion :** Nous avons comparé trois mécanismes de répartition des données manquantes (MCAR, MAR et MNAR) sur un jeu de données où nous avons réalisé une analyse des cas complets, deux imputations simples (par la moyenne et par régression stochastique) et deux imputations multiples (par régression stochastique et régression). Après différentes études, nous en concluons de bons résultats pour le mécanisme MCAR ainsi que pour le mécanisme MAR sur les imputations par régression. Quand aux différentes méthodes d'imputation, les résultats des impuations simples semblaient meilleurs mais avec toutes les limites qu'ils comportent sur la variabilité des données. Ainsi, une imputation multiple est donc conseillée. Nous avons obtenu de meilleurs résultats lorsqu'elle était par régression stochastique pour la longueur de l'intervalle. Cependant, pour le taux de couverture, l'imputation multiple par régression était légèrement plus performante.
+
+\newpage
 
 ## 2. Scénarios NA sur le jeu de données `mites`
 

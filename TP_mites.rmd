@@ -1770,6 +1770,7 @@ legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "
 ```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y apr§s imputation multiple par régression"}
 matplot(mat.ir20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Imputation multiple par régression")
 legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
+
 ```
 
 Tout d'abord, nous remarquons que les moyennes obtenues avec le mécanisme MCAR sont toujours autour de $0$. Lorsque les impuations sont réalisées par régression, les moyennes du jeu de données associé au mécanisme MAR s'améliorent nettement et se rapprochent de la valeur attendue. Quant au mécansime MNAR, peu importe les méthodes d'imputation utilisées par la suite, les moyennes estimées sont toujours dans les négatifs. Nous confirmons alors la complexité d'analyse des jeux de données ayant des valeurs manquantes de ce type.
@@ -1865,11 +1866,10 @@ mites1
 str(mites1)
 ```
 
-L'utilisation de la fonction `ampute` necessite une attention particuliere. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seul de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes.
+L'utilisation de la fonction `ampute` necessite une attention particuliere. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seul de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes. Nous obtenons donc un nouveau jeu de données.
 
 ```{r}
 amp.mcar1 = ampute(mites1, prop = 0.10, mech = "MCAR")
-dim(mites1)
 countNA(amp.mcar1$amp)
 ```
 
@@ -1915,9 +1915,8 @@ Nous allons maintenant explorer et analyser les 3 dispositifs de données manqua
 
 Nous allons utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée.
 
-**MCAR**
 
-```{r, echo = F}
+```{r, echo = F, fig.cap = MCAR}
 aggr(amp.mcar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1928,9 +1927,10 @@ aggr(amp.mcar$amp, col=c('navyblue','red'),
 
 Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes, soit 50% des lignes dans notre cas. Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple, 11,4% de lignes qui contiennent des données manquantes pour la variable "WatrCont".
 
-**MAR**
 
-```{r, echo = F}
+
+```{r, echo = F, fig.cap = MAR}
+
 aggr(amp.mar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1939,11 +1939,12 @@ aggr(amp.mar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
-On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas.
 
-**MNAR**
 
-```{r, echo = F}
+On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas. 
+
+```{r, echo = F, fig.cap = MNAR}
+
 aggr(amp.mnar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1952,13 +1953,16 @@ aggr(amp.mnar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
-Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes.
+
+Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes. 
 
 **Analyse bivariée**
 
-Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`. Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le v de Cramer se rapproche de 1, plus l'intensité de la relation est forte.? Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
+Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`.
+Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le V de Cramer se rapproche de 1, plus l'intensité de la relation est forte. Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
 
-**MCAR** Nous avons vu que dans le dispositif MCAR, les variables `SubsDens` et `prop` sont les deux variables ayant le plus de données manquantes. Nous allons donc voir si ces 2 variables ont une forte relation. Nous allons de plus, tester sur différentes paires de variables.
+Nous avons vu que dans le dispositif MCAR, les variables `SubsDens` et `prop` sont les deux variables ayant le plus de données manquantes. Nous allons donc voir si ces 2 variables ont une forte relation. Nous allons, de plus, tester sur différentes paires de variables.
+
 
 ```{r, echo = F}
 tab <- table(amp.mcar$amp$SubsDens, amp.mcar$amp$prop, useNA= "always")
@@ -1973,7 +1977,6 @@ c4 <- CramerV(tab2)
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/SubsDens", "WatrCont/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MCAR)")
 ```
 
-**MAR**
 
 ```{r, echo = F}
 tab <- table(amp.mar$amp$SubsDens, amp.mar$amp$prop, useNA= "always")
@@ -1988,7 +1991,6 @@ c4 <- CramerV(tab3)
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/WatrCont", "SubsDens/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MAR)")
 ```
 
-**MNAR**
 
 ```{r, echo = F}
 tab <- table(amp.mnar$amp$SubsDens, amp.mnar$amp$prop, useNA= "always")
@@ -2007,11 +2009,14 @@ Le V de Cramer est tres proche de 1 pour chaque paire de variable et chaque disp
 
 **Analyse muldimentionnelle**
 
-Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle. L'analyse des correspondances multiples est une technique descriptive visant à résumer l'information contenu dans un grand nombre de variables afin de faciliter l'interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles. L'analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données.
 
-**MCAR**
+Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle.
+L’analyse des correspondances multiples est une technique descriptive visant à résumer l’information contenu dans un grand nombre de variables afin de faciliter l’interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles.
+L’analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données.
+Le nom des variable finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o". 
 
-```{r, echo = F}
+```{r, echo = F, fig.height=4, fig.cap=MCAR}
+
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
 mis.ind[is.na(amp.mcar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mcar$amp)
@@ -2019,11 +2024,9 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-Le nom des variable finissant par "-m" signifie les données manquantes pour cette variables, contrairement au nom des variables se termiant par "-o".
 
-**MAR**
+```{r, echo = F, fig.height=4, fig.cap=MAR}
 
-```{r, echo = F}
 mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
 mis.ind[is.na(amp.mar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mar$amp)
@@ -2031,9 +2034,9 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-**MNAR**
 
-```{r, echo = F}
+```{r, echo = F, fig.height=4, fig.cap=MNAR}
+
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
 mis.ind[is.na(amp.mnar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mnar$amp)
@@ -2042,8 +2045,8 @@ plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
 DONT KNOW
-
-Je sais pas/plus comment lire ces graphes. Quoi en dire ??? -\> Rien sur le diapo de Lise
+Je sais pas/plus comment lire ces graphes. Quoi en dire ??? -> Rien sur le diapo de Lise
+ 
 
 ### Imputation les données manquantes
 
@@ -2061,21 +2064,18 @@ Nous utilisons la fonction `impute` du package `Hmisc`.
 
 ```{r}
 dat.moy.mcar=impute(amp.mcar$amp, what=mean)
-as.matrix(dat.moy.mcar)
 ```
 
 **MAR**
 
 ```{r}
 dat.moy.mar=impute(amp.mar$amp, what=mean)
-as.matrix(dat.moy.mar)
 ```
 
 **MNAR**
 
 ```{r}
 dat.moy.mnar=impute(amp.mnar$amp, what=mean)
-as.matrix(dat.moy.mnar)
 ```
 
 #### Par la médiane
@@ -2086,21 +2086,18 @@ Nous utilisons aussi la fonction `impute` du package `Hmisc`. **MCAR**
 
 ```{r}
 dat.med.mcar=impute(amp.mcar$amp, fun=median)
-as.matrix(dat.med.mcar)
 ```
 
 **MAR**
 
 ```{r}
 dat.med.mar=impute(amp.mar$amp, fun=median)
-as.matrix(dat.med.mar)
 ```
 
 **MNAR**
 
 ```{r}
 dat.med.mnar=impute(amp.mnar$amp, fun=median)
-as.matrix(dat.med.mnar)
 ```
 
 #### LOVF (Last observation carries forward)
@@ -2171,9 +2168,11 @@ indices=1:nrow(amp.mcar$amp)
 dat.loess= apply(dat.imputed, 2, function(j) {
 predict(locfit(j[-1] ~ indices), indices)
 })
+head(dat.loess)
 ```
 
-Avec cette méthode nous remarquons que la variable `Galumna` et `totalabund` ne sont plus des valeurs entières. Nous prenons donc pas cette méthode en considération dans notre analyse.
+Avec cette méthode nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées. Nous ne prenons donc pas cette méthode en considération dans notre analyse.
+
 
 #### missForests
 
@@ -2184,9 +2183,11 @@ Avec cette méthode nous remarquons que la variable `Galumna` et `totalabund` ne
 ```{r}
 dat.missForest<-missForest(amp.mcar$amp,maxiter=10,
         ntree = 200, variablewise = TRUE)$ximp
+head(dat.missForest)
 ```
 
-Comme pour la méthode Loess, nous remarquons que la variable `Galumna` et `totalabund` ne sont plus des valeurs entières.
+Comme pour la méthode Loess, nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées.
+
 
 A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 

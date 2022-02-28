@@ -1181,9 +1181,15 @@ Notons que ce dernier type de données manquantes est plus complexe à traiter p
 
 Maintenant que nous avons ajouté de trois manières différentes des valeurs manquantes sur la variable $Y$, nous allons analyser les jeux de données obtenus. Pour cela, nous commençons par les visualiser en entier. Nous utilisons la fonction `vis_miss` du package `visdat`.
 
-```{r, echo = F, warning = F, fig.height=5, fig.cap="Pourcentage de données manquantes"}
+```{r, echo = F, warning = F, fig.height=4, fig.cap="Pourcentage de données manquantes MCAR"}
 vis_miss(don.ismcar) + labs(title="MCAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+```
+
+```{r, echo = F, warning = F, fig.height=4, fig.cap="Pourcentage de données manquantes MAR"}
 vis_miss(don.ismar) + labs(title="MAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+```
+
+```{r, echo = F, warning = F, fig.height=4, fig.cap="Pourcentage de données manquantes MNAR"}
 vis_miss(don.ismnar) + labs(title="MNAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
 ```
 
@@ -1191,13 +1197,17 @@ Nous remarquons que les pourcentages de données manquantes sont globalement éq
 
 Nous pouvons alors regarder plus en détails comment sont reparties les données manquantes de $Y$ selon les valeurs de $X$ pour chacun des jeux de données. Pour cela, nous utilisons la fonction `geom_miss_point` disponible dans `ggplot`.
 
-```{r, echo = F, fig.height=5, fig.cap="Répartition des données manquantes"}
+```{r, echo = F, fig.cap="Répartition des données manquantes MCAR"}
 ggplot(data = don.ismcar) +
 aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MCAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+```
 
+```{r, echo = F, fig.cap="Répartition des données manquantes MAR"}
 ggplot(data = don.ismar) +
 aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+```
 
+```{r, echo = F, fig.cap="Répartition des données manquantes MNAR"}
 ggplot(data = don.ismnar) +
 aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MNAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
 ```
@@ -1319,7 +1329,7 @@ Concrètement, pour réaliser cette méthode, il nous faut tirer aléatoirement 
 
 Nous visualisons ensuite les données pour s'assurer que la distribution des données imputées est globalement la même que celle des données initiales.
 
-```{r, echo = F, fig.height=5, fig.cap="Imputation simple par régression stochastique"}
+```{r, echo = F, fig.height=4,fig.height=4, fig.cap="Imputation simple par régression stochastique MCAR"}
 set.seed(122)
 don.ismcar.irs <- complete(mice(don.ismcar, method = "norm.nob", m = 1, print = FALSE))
 don.ismar.irs <- complete(mice(don.ismar, method = "norm.nob", m = 1, print = FALSE))
@@ -1336,7 +1346,9 @@ legend("topleft",
        pch = c(1, 1, NA),
        lty = c(NA, NA, 1),
        col = c("black", "red", "blue"))
+```
 
+```{r, echo = F, fig.height=4,fig.cap="Imputation simple par régression stochastique MAR"}
 plot(don.ismar.irs$X[!is.na(don.ismar$Y)], don.ismar.irs$Y[!is.na(don.ismar$Y)],  
      xlim = c(-3, 3), ylim = c(- 5, 5),
      main = "MAR",
@@ -1348,6 +1360,9 @@ legend("topleft",
        pch = c(1, 1, NA),
        lty = c(NA, NA, 1),
        col = c("black", "red", "blue"))
+```
+
+```{r, echo = F, fig.height=4,fig.cap="Imputation simple par régression stochastique MNAR"}
 
 plot(don.ismnar.irs$X[!is.na(don.ismnar$Y)], don.ismnar.irs$Y[!is.na(don.ismnar$Y)],  
      xlim = c(-3, 3), ylim = c(- 5, 5),
@@ -1400,14 +1415,19 @@ La méthode précédente ayant des résultats encourageants, nous souhaitons pou
 
 Nous obtenons alors $20$ jeu de données imputés. Regardons les valeurs pour chacun d'eux, dans les trois cas que nous étudions :
 
-```{r, echo = F, fig.height=5, fig.cap= "Imputation multiple par régression stochastique"}
+```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression stochastique"}
 set.seed(123)
 don.ismcar.irs20 <- mice(don.ismcar, method = "norm.nob", m = 20, print = FALSE)
 don.ismar.irs20 <- mice(don.ismar, method = "norm.nob", m = 20, print = FALSE)
 don.ismnar.irs20 <- mice(don.ismnar, method = "norm.nob", m = 20, print = FALSE)
 
 stripplot(don.ismcar.irs20, pch = 20, cex = 1.2, main = "MCAR")
+```
+
+```{r, echo = F, fig.height=4,fig.cap= "Imputation multiple par régression stochastique MCAR"}
 stripplot(don.ismar.irs20, pch = 20, cex = 1.2, main = "MAR")
+```
+```{r, echo = F, fig.height=4,fig.cap= "Imputation multiple par régression stochastique MNAR"}
 stripplot(don.ismnar.irs20, pch = 20, cex = 1.2, main = "MNAR")
 ```
 
@@ -1437,7 +1457,7 @@ Une nouvelle fois, le mécanisme MAR obtient le meilleur résultat, même si il 
 
 Regardons les intervalles de confiance associés :
 
-```{r}
+```{r, echo=F}
 inf_mcar.irs20 <- summary(fitpool_mcar.irs20, conf.int = TRUE)[7]
 sup_mcar.irs20 <- summary(fitpool_mcar.irs20, conf.int = TRUE)[8]
 
@@ -1464,14 +1484,20 @@ Enfin, nous allons tester de réaliser une nouvelle fois une imputation multiple
 
 Nous obtenons les distributions suivantes :
 
-```{r, echo = F, fig.height=5, fig.cap= "Imputation multiple par régression"}
-set.seed(124)
+```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression MCAR"}
+set.seed(123)
 don.ismcar.ir20 <- mice(don.ismcar, method = "norm", m = 20, print = FALSE)
 don.ismar.ir20 <- mice(don.ismar, method = "norm", m = 20, print = FALSE)
 don.ismnar.ir20 <- mice(don.ismnar, method = "norm", m = 20, print = FALSE)
 
 stripplot(don.ismcar.ir20, pch = 20, cex = 1.2, main = "MCAR")
+```
+
+```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression MAR"}
 stripplot(don.ismar.ir20, pch = 20, cex = 1.2, main = "MAR")
+```
+
+```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression MNAR"}
 stripplot(don.ismnar.ir20, pch = 20, cex = 1.2, main = "MNAR")
 ```
 
@@ -1715,7 +1741,7 @@ Nous savons que le biais s'écrit de la forme $Biais(\hat{\theta})=\mathbb{E}(\h
 
 Commençons donc par regarder l'évolution de la moyenne sur ces $200$ imputations pour chacune des méthodes :
 
-```{r, echo = F, fig.height=5, fig.cap= "Evolution de la moyenne de Y"}
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y pour les cas complets"}
 mat.cc <- matrix(c(mean.mcar.cc,mean.mar.cc,mean.mnar.cc), ncol = 3)
 mat.im <- matrix(c(mean.mcar.im,mean.mar.im,mean.mnar.im), ncol = 3)
 mat.irs <- matrix(c(mean.mcar.irs,mean.mar.irs,mean.mnar.irs), ncol = 3)
@@ -1724,12 +1750,22 @@ mat.ir20 <- matrix(c(mean.mcar.ir20,mean.mar.ir20,mean.mnar.ir20), ncol = 3)
 
 matplot(mat.cc, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Cas complets")
 legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+```
+
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation simple par la moyenne"}
 matplot(mat.im, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation simple par la moyenne")
 legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+```
+
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation simple par régression stochastique"}
 matplot(mat.irs, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation simple par régression stochastique")
 legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+```
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation multiple par régression stochastique"}
 matplot(mat.irs20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation multiple par régression stochastique")
 legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+```
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y apr§s imputation multiple par régression"}
 matplot(mat.ir20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation multiple par régression")
 legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
 ```
@@ -1777,7 +1813,7 @@ Les imputations multiples obtiennent donc des intervalles plus grands mais tente
 
 Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons dans le tableau suivant :
 
-```{r}
+```{r, echo=F}
 tc.mcar.cc <- sum(sign(IC.mcar.cc[,1]*IC.mcar.cc[,2])<0)
 tc.mar.cc <- sum(sign(IC.mar.cc[,1]*IC.mar.cc[,2])<0)
 tc.mnar.cc <- sum(sign(IC.mnar.cc[,1]*IC.mnar.cc[,2])<0)
@@ -1808,11 +1844,13 @@ kable(data.frame(L), col.names = c("MCAR", "MAR", "MNAR"), position="H", caption
 
 Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longeur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
 
+\newpage 
+
 **Conclusion :** Nous avons comparé trois mécanismes de répartition des données manquantes (MCAR, MAR et MNAR) sur un jeu de données où nous avons réalisé une analyse des cas complets, deux imputations simples (par la moyenne et par régression stochastique) et deux imputations multiples (par régression stochastique et régression). Après différentes études, nous en concluons de bons résultats pour le mécanisme MCAR ainsi que pour le mécanisme MAR sur les imputations par régression. Quand aux différentes méthodes d'imputation, les résultats des impuations simples semblaient meilleurs mais avec toutes les limites qu'ils comportent sur la variabilité des données. Ainsi, une imputation multiple est donc conseillée. Nous avons obtenu de meilleurs résultats lorsqu'elle était par régression stochastique pour la longueur de l'intervalle. Cependant, pour le taux de couverture, l'imputation multiple par régression était légèrement plus performante.
 
 \newpage
 
-## 2. Scénarios NA sur le jeu de données `mites`
+## Scénarios NA sur le jeu de données `mites`
 
 Nous allons dans un premier temps générer 10% de données manquantes sur notre jeu de données `mites` suivant les 3 catégories utilisées precedement, MCAR, MAR et MNAR. Nous allons utiliser la fonction `ampute` du package `mice`. Pour utiliser cette fonction, nous allons uniquement nous concentrer sur les variables quantitatives de notre jeu de données `mites` et ainsi supprimer les variables qualitatives, `Substrate`, `Shrub` et `Topo` et la variable binaire `pa`.
 
@@ -2001,7 +2039,8 @@ Nous allons maintenant imputer les données manquantes sur les 3 dispositifs que
 
 **Imputation simple** 
 
-#1. Par la moyenne
+#### Par la moyenne
+\  
 
 Nous utilisons  la fonction `impute` du package `Hmisc`.
 
@@ -2023,7 +2062,8 @@ dat.moy.mnar=impute(amp.mnar$amp, what=mean)
 as.matrix(dat.moy.mnar)
 ```
 
-#2. Par la médiane
+#### Par la médiane
+\  
 
 Nous utilisons aussi la fonction `impute` du package `Hmisc`.
 **MCAR**
@@ -2044,7 +2084,8 @@ dat.med.mnar=impute(amp.mnar$amp, fun=median)
 as.matrix(dat.med.mnar)
 ```
 
-#3. LOVF (Last observation carries forward)
+#### LOVF (Last observation carries forward)
+\  
 
 Cette méthode remplace la valeur manquante par la dernière valeur disponible (cas de données longitudinales). Cependant, cette méthode peut donner des résultats biaisées, même en présence de MCAR. Nous utilisons la fonction `na.locf` du package `zoo`.
 
@@ -2069,7 +2110,8 @@ dat.locf=na.locf(dat.locf,na.rm=FALSE,
    fromLast=TRUE)
 ```
 
-#4. k plus proches voisins kNN
+#### k plus proches voisins kNN
+\  
 
 L’idée de cette méthode est de calculer les distances entre observations, et d’attribuer aux données manquantes la moyenne des valeurs observées chez les k plus proches voisins. Nous utilisons la fonction `kNN` du package `VIM`.
 
@@ -2088,7 +2130,8 @@ dat.kNN=kNN(amp.mar$amp, k=5, imp_var=FALSE)
 dat.kNN=kNN(amp.mnar$amp, k=5, imp_var=FALSE)
 ```
 
-#5. Loess (Régression locale)
+#### Loess (Régression locale)
+\  
 
 Cette méthode consiste à construire un polynôme de degré faible par méthode des moindres carrés pondérés en fonction de la proximité entre les observations jugées semblables à celle sur laquelle nous voulons procéder à l’imputation. 
 
@@ -2102,7 +2145,8 @@ predict(locfit(j[-1] ~ indices), indices)
 ```
 Avec cette méthode nous remarquons que la variable `Galumna` et `totalabund` ne sont plus des valeurs entières. Nous prenons donc pas cette méthode en considération dans notre analyse.
 
-#6. missForests
+#### missForests
+\  
 
 **MCAR**
 ```{r}

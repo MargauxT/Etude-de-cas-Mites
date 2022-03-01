@@ -49,6 +49,7 @@ library(zoo)
 library(bcv)
 library(missForest)
 library(locfit)
+library(Amelia)
 ```
 
 \clearpage
@@ -2011,7 +2012,7 @@ L’analyse des correspondances multiples est une technique descriptive visant �
 L’analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données.
 Le nom des variable finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o". 
 
-```{r, echo = F, fig.cap= "MCAR"}
+```{r, echo = F, fig.height=5, fig.cap= "MCAR"}
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
 mis.ind[is.na(amp.mcar$amp)] <- "m"
@@ -2020,7 +2021,7 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.cap= "MAR"}
+```{r, echo = F, fig.height=5, fig.cap= "MAR"}
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
 mis.ind[is.na(amp.mar$amp)] <- "m"
@@ -2029,7 +2030,7 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.cap= "MNAR"}
+```{r, echo = F, fig.height=5, fig.cap= "MNAR"}
 par(mfrow = c(2,2))
 
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
@@ -2038,10 +2039,6 @@ dimnames(mis.ind) <- dimnames(amp.mnar$amp)
 resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
-
-DONT KNOW
-Je sais pas/plus comment lire ces graphes. Quoi en dire ??? -> Rien sur le diapo de Lise
- 
 
 ### Imputation les données manquantes
 
@@ -2188,11 +2185,160 @@ A noter que la méthode SVD, décomposition en valeurs singulières, ne fonction
 
 **Imputation multiple** 
 
-L'utilisation de la fonction `mice` suppose que les données soient MAR.
-A chaque variable est associé un modèle d’imputation, conditionnellement aux autres variables du jeu de données : si on a $X_k$ variables, les données manquantes de la variable $X_i$ seront remplacées par les prédictions d’un modèle créé à partir des autres variables. 
+Dans l'imputation simple, une valeur unique ne peut pas refléter l'incertitude sur la prédiction. Une autre approche est l’imputation multiple, qui consiste à imputer successivement plusieurs valeurs à chaque donnée manquante. Plusieurs jeux de données complétés sont ainsi générés, respectant les caractéristiques de la distribution des données observées (variabilité et corrélations entre les variables). Des analyses standard sont ensuite menées séparément sur chaque jeu de données complété, puis leurs résultats sont combinés pour fournir un résultat global. 
 
+Nous allons suivre la même démarche que nous avons fait sur les données générées dans la partie précédement toujours en utilisant la fonction `mice`.
 
+-   Imputation multiple par régression stochastique 
 
+Nous utilisons l'argument `m=20` ce qui signifie que nous obtenons $20$ jeu de données imputées. 
+
+```{r, echo = F, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique"}
+set.seed(123)
+mcar.mice <- mice(amp.mcar$amp, method = "norm.nob", m = 20, print = FALSE)
+mar.mice <- mice(amp.mar$amp, method = "norm.nob", m = 20, print = FALSE)
+mnar.mice <- mice(amp.mnar$amp, method = "norm.nob", m = 20, print = FALSE)
+
+stripplot(mcar.mice, pch = 20, cex = 1, cex.main = 1, main = "MCAR")
+```
+
+```{r, echo = F, fig.height=4,fig.cap= "MAR - Imputation multiple par régression stochastique"}
+stripplot(mar.mice, pch = 20, cex = 1, cex.main = 1, main = "MAR")
+```
+
+```{r, echo = F, fig.height=4,fig.cap= "MNAR - Imputation multiple par régression stochastique"}
+stripplot(mnar.mice, pch = 20, cex = 1, cex.main = 1, main = "MNAR")
+```
+Les données imputées sont en rouges. On remarque des différences dans les 3 dispositifs. En effet, dans le dispositif MNAR et plus particulierement pour la variable `prop`, les données imputées ne respectent pas les données initiales en comparaison aux dispositifs MCAR et MAR pour la variable `prop` qui respecte bien le distribution des données initiales. Les deux dispositifs MCAR et MAR respecte assez bien la distribution des données initiales. 
+
+Nous allons maintenant, identiquement à la partie précédente, analyse et combiner les données en utilisant les fonctions `with` et `pool` pour récuperer la moyenne estimée. 
+
+```{r, echo = F}
+set.seed(123)
+
+fit_mcar.mice <- with(mcar.mice, lm(prop~1))
+fitpool_mcar.mice <- pool(fit_mcar.mice)
+mean.mcar.mice <- fitpool_mcar.mice$pooled[3]
+
+fit_mar.mice <- with(mar.mice, lm(prop~1))
+fitpool_mar.mice <- pool(fit_mar.mice)
+mean.mar.mice <- fitpool_mar.mice$pooled[3]
+
+fit_mnar.mice <- with(mnar.mice, lm(prop~1))
+fitpool_mnar.mice <- pool(fit_mnar.mice)
+mean.mnar.mice <- fitpool_mnar.mice$pooled[3]
+
+mean(mites1$prop)
+kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de prop après combinaison des 20 imputations par régression stochastique")
+```
+
+En comparaison avec la moyenne sur la variable `prop` des données initiales du jeu de données `mites`, nous avons que le dispositif MAR et MCAR obtiennent les meilleurs résultats. 
+
+```{r, echo = F}
+set.seed(123)
+
+fit_mcar.mice <- with(mcar.mice, lm(Galumna~1))
+fitpool_mcar.mice <- pool(fit_mcar.mice)
+mean.mcar.mice <- fitpool_mcar.mice$pooled[3]
+
+fit_mar.mice <- with(mar.mice, lm(Galumna~1))
+fitpool_mar.mice <- pool(fit_mar.mice)
+mean.mar.mice <- fitpool_mar.mice$pooled[3]
+
+fit_mnar.mice <- with(mnar.mice, lm(Galumna~1))
+fitpool_mnar.mice <- pool(fit_mnar.mice)
+mean.mnar.mice <- fitpool_mnar.mice$pooled[3]
+
+mean(mites1$Galumna)
+kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Galumna après combinaison des 20 imputations par régression stochastique")
+```
+
+Pour la variable `Galumna`, le resultat n'est pas similaire, dans ce cas le dispositif MNAR a le meilleur résultat. 
+
+```{r, echo = F}
+set.seed(123)
+
+fit_mcar.mice <- with(mcar.mice, lm(totalabund~1))
+fitpool_mcar.mice <- pool(fit_mcar.mice)
+mean.mcar.mice <- fitpool_mcar.mice$pooled[3]
+
+fit_mar.mice <- with(mar.mice, lm(totalabund~1))
+fitpool_mar.mice <- pool(fit_mar.mice)
+mean.mar.mice <- fitpool_mar.mice$pooled[3]
+
+fit_mnar.mice <- with(mnar.mice, lm(totalabund~1))
+fitpool_mnar.mice <- pool(fit_mnar.mice)
+mean.mnar.mice <- fitpool_mnar.mice$pooled[3]
+
+mean(mites1$totalabund)
+kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de totalabund après combinaison des 20 imputations par régression stochastique")
+```
+
+Pour ces $3$ variables différentes ils n'y a pas de dispositif qui se démarquent des autres. Cependant, le dispositif MAR semble être plutot bon sur chaque variable tandis que par exemple le dispositif MNAR est mauvais pour la variable `prop`. Nous retenons donc le dispositif MAR pour l'imputation multiple par régression stochastique. 
+
+-   Imputation multiple par régression 
+
+Nous allons une nouvelle fois tester une imputation multiple mais cette fois-ci par régression linéaire. Nous indiquons donc dans la fonction `mice` l'argument `method=norm`. 
+
+```{r, echo = F, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique"}
+set.seed(123)
+mcar.mice1 <- mice(amp.mcar$amp, method = "norm", m = 20, print = FALSE)
+mar.mice1 <- mice(amp.mar$amp, method = "norm", m = 20, print = FALSE)
+mnar.mice1 <- mice(amp.mnar$amp, method = "norm", m = 20, print = FALSE)
+
+stripplot(mcar.mice1, pch = 20, cex = 1, cex.main = 1, main = "MCAR")
+```
+```{r, echo = F, fig.height=4, fig.cap= "MAR - Imputation multiple par régression stochastique"}
+stripplot(mar.mice1, pch = 20, cex = 1, cex.main = 1, main = "MAR")
+```
+```{r, echo = F, fig.height=4, fig.cap= "MNAR - Imputation multiple par régression stochastique"}
+stripplot(mnar.mice1, pch = 20, cex = 1, cex.main = 1, main = "MNAR")
+```
+Nous calculons ensuite les moyennes pour les 3 variables étudiées précedemment. 
+
+```{r, echo = F}
+set.seed(123)
+
+fit_mcar.mice1 <- with(mcar.mice1, lm(prop~1))
+fitpool_mcar.mice1 <- pool(fit_mcar.mice1)
+mean.mcar.mice1 <- fitpool_mcar.mice1$pooled[3]
+
+fit_mar.mice1 <- with(mar.mice1, lm(prop~1))
+fitpool_mar.mice1 <- pool(fit_mar.mice1)
+mean.mar.mice1 <- fitpool_mar.mice1$pooled[3]
+
+fit_mnar.mice1 <- with(mnar.mice1, lm(prop~1))
+fitpool_mnar.mice1 <- pool(fit_mnar.mice1)
+mean.mnar.mice1 <- fitpool_mnar.mice1$pooled[3]
+
+mean(mites1$prop)
+kable(data.frame(mean.mcar.mice1,mean.mar.mice1,mean.mnar.mice1), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de prop après combinaison des 20 imputations par régression stochastique")
+```
+
+```{r, echo = F}
+set.seed(123)
+
+fit_mcar.mice1 <- with(mcar.mice1, lm(Galumna~1))
+fitpool_mcar.mice1 <- pool(fit_mcar.mice1)
+mean.mcar.mice1 <- fitpool_mcar.mice1$pooled[3]
+
+fit_mar.mice1 <- with(mar.mice1, lm(Galumna~1))
+fitpool_mar.mice1 <- pool(fit_mar.mice1)
+mean.mar.mice1 <- fitpool_mar.mice1$pooled[3]
+
+fit_mnar.mice1 <- with(mnar.mice1, lm(Galumna~1))
+fitpool_mnar.mice1 <- pool(fit_mnar.mice1)
+mean.mnar.mice1 <- fitpool_mnar.mice1$pooled[3]
+
+mean(mites1$Galumna)
+kable(data.frame(mean.mcar.mice1,mean.mar.mice1,mean.mnar.mice1), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Galumna après combinaison des 20 imputations par régression stochastique")
+```
+
+Nous obtenons les mêmes résultats pour l'imputation multiple par régression. 
+
+**Conclusion**
+
+Nous avons utilisé le jeu de données `mites` pour générer des données manquantes suivant les 3 catégories MCAR, MAR et MNAR. Nous avons ensuite analyser ces 3 dispositifs dans une analyse univariée, une analyse bivariée et une analyse muldimentionnelle. Pour finir, nous avons imputer les données manquantes de plusieurs méthodes différentes, de l'imputation simple à l'imputation multiple. 
 
 \newpage
 

@@ -1815,7 +1815,7 @@ Les imputations multiples obtiennent donc des intervalles plus grands mais tente
 
 -   Taux de couverture de l'intervalle de confiance
 
-Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons en pourcentage dans le tableau suivant :
+Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons en pourcentage dans le tableau suivant : 
 
 ```{r, echo=F}
 tc.mcar.cc <- (sum(sign(IC.mcar.cc[,1]*IC.mcar.cc[,2])<0)*100/200)
@@ -1842,9 +1842,12 @@ L <- rbind(data.frame('1'= tc.mcar.cc, '2' = tc.mar.cc, '3' = tc.mnar.cc),data.f
 
 colnames(L) <- c("MCAR", "MAR", "MNAR")
 rownames(L) <- c("Cas complets", "Imputation par la moyenne", "Imputation simple par régression stochastqiue", "Imputation multiple par régression stochastique", "Imputation multiple par régression")
-
-kable(data.frame(L), col.names = c("MCAR", "MAR", "MNAR"), position="H", caption = "Taux de couverture de l'intervalle de confiance (en %)")
 ```
+
+```{r, echo=F}
+kable(data.frame(L), position="H", caption = "Taux de couverture de l'intervalle de confiance")
+```
+
 
 Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longeur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
 
@@ -1916,7 +1919,6 @@ Nous allons maintenant explorer et analyser les 3 dispositifs de données manqua
 
 Nous allons utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée.
 
-
 ```{r, echo = F, fig.cap = "MCAR"}
 aggr(amp.mcar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
@@ -1937,9 +1939,7 @@ aggr(amp.mar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
-
-
-On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas. 
+On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas.
 
 ```{r, echo = F, fig.cap = "MNAR"}
 aggr(amp.mnar$amp, col=c('navyblue','red'),
@@ -1950,16 +1950,13 @@ aggr(amp.mnar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
-
-Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes. 
+Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes.
 
 **Analyse bivariée**
 
-Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`.
-Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le V de Cramer se rapproche de 1, plus l'intensité de la relation est forte. Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
+Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`. Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le V de Cramer se rapproche de 1, plus l'intensité de la relation est forte. Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
 
 Nous avons vu que dans le dispositif MCAR, les variables `SubsDens` et `prop` sont les deux variables ayant le plus de données manquantes. Nous allons donc voir si ces 2 variables ont une forte relation. Nous allons, de plus, tester sur différentes paires de variables.
-
 
 ```{r, echo = F}
 tab <- table(amp.mcar$amp$SubsDens, amp.mcar$amp$prop, useNA= "always")
@@ -1974,7 +1971,6 @@ c4 <- CramerV(tab2)
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/SubsDens", "WatrCont/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MCAR)")
 ```
 
-
 ```{r, echo = F}
 tab <- table(amp.mar$amp$SubsDens, amp.mar$amp$prop, useNA= "always")
 c1 <- CramerV(tab)
@@ -1987,7 +1983,6 @@ c4 <- CramerV(tab3)
 
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/WatrCont", "SubsDens/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MAR)")
 ```
-
 
 ```{r, echo = F}
 tab <- table(amp.mnar$amp$SubsDens, amp.mnar$amp$prop, useNA= "always")
@@ -2006,11 +2001,7 @@ Le V de Cramer est tres proche de 1 pour chaque paire de variable et chaque disp
 
 **Analyse muldimentionnelle**
 
-
-Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle.
-L’analyse des correspondances multiples est une technique descriptive visant à résumer l’information contenu dans un grand nombre de variables afin de faciliter l’interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles.
-L’analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données.
-Le nom des variable finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o". 
+Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle. L'analyse des correspondances multiples est une technique descriptive visant à résumer l'information contenu dans un grand nombre de variables afin de faciliter l'interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles. L'analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données. Le nom des variable finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o".
 
 ```{r, echo = F, fig.height=5, fig.cap= "MCAR"}
 par(mfrow = c(2,2))
@@ -2165,7 +2156,6 @@ head(dat.loess)
 
 Avec cette méthode nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées. Nous ne prenons donc pas cette méthode en considération dans notre analyse.
 
-
 #### missForests
 
  
@@ -2179,7 +2169,6 @@ head(dat.missForest)
 ```
 
 Comme pour la méthode Loess, nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées.
-
 
 A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 
@@ -2339,6 +2328,7 @@ Nous obtenons les mêmes résultats pour l'imputation multiple par régression.
 **Conclusion**
 
 Nous avons utilisé le jeu de données `mites` pour générer des données manquantes suivant les 3 catégories MCAR, MAR et MNAR. Nous avons ensuite analyser ces 3 dispositifs dans une analyse univariée, une analyse bivariée et une analyse muldimentionnelle. Pour finir, nous avons imputer les données manquantes de plusieurs méthodes différentes, de l'imputation simple à l'imputation multiple. 
+
 
 \newpage
 

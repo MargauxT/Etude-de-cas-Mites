@@ -545,7 +545,7 @@ title(main="lm(BoxCox(prop)~.)", line=1.4)
 cat("p-value pour le test de Shapiro-Wilk : ",shapiro.test(lm.tot.g.bc$residuals)$p.value)
 ```
 
-Graphiquement, la transformation semble avoir légèrement amélioré la normalité des résidus (ce n'est pas la même échelle pour $y$ pour les deux graphiques). Cependant, d'après le test de Shapiro-Wilk, on rejette l'hypothèse de normalité. \newpage 
+Graphiquement, la transformation semble avoir légèrement amélioré la normalité des résidus (ce n'est pas la même échelle pour $y$ pour les deux graphiques). Cependant, d'après le test de Shapiro-Wilk, on rejette l'hypothèse de normalité. \newpage
 
 **Conclusion :**
 
@@ -710,7 +710,6 @@ Afin de valider notre modèle, nous allons à présent évaluer son ajustement, 
     ```
 
     La p-value étant très grande, on admet que le modèle est très bien adapté aux données. On peut tout de même visualiser ces résidus de Pearson.
-
 
     ```{r, echo=F, fig.cap="Résidus de Pearson du modèle expliquant pa"}
     res2 <- residuals(glm.best.pa, type="pearson")
@@ -1182,15 +1181,15 @@ Notons que ce dernier type de données manquantes est plus complexe à traiter p
 Maintenant que nous avons ajouté de trois manières différentes des valeurs manquantes sur la variable $Y$, nous allons analyser les jeux de données obtenus. Pour cela, nous commençons par les visualiser en entier. Nous utilisons la fonction `vis_miss` du package `visdat`.
 
 ```{r, echo = F, warning = F, fig.height=4, fig.cap="Pourcentage de données manquantes MCAR"}
-vis_miss(don.ismcar) + labs(title="MCAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+vis_miss(don.ismcar) + labs(title="MCAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 ```{r, echo = F, warning = F, fig.height=4, fig.cap="Pourcentage de données manquantes MAR"}
-vis_miss(don.ismar) + labs(title="MAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+vis_miss(don.ismar) + labs(title="MAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 ```{r, echo = F, warning = F, fig.height=4, fig.cap="Pourcentage de données manquantes MNAR"}
-vis_miss(don.ismnar) + labs(title="MNAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+vis_miss(don.ismnar) + labs(title="MNAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 Nous remarquons que les pourcentages de données manquantes sont globalement équivalents. En effet, elles représentent environ $35$% de la variable $Y$, équivalent à $18$% de la totalité du jeu de données. Cependant, elles ne sont pas réparties de la même façon dans les différents cas.
@@ -1199,17 +1198,17 @@ Nous pouvons alors regarder plus en détails comment sont reparties les données
 
 ```{r, echo = F, fig.cap="Répartition des données manquantes MCAR"}
 ggplot(data = don.ismcar) +
-aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MCAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+aes(x = X, y = Y) + geom_miss_point(size = 2) + labs(title="MCAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 ```{r, echo = F, fig.cap="Répartition des données manquantes MAR"}
 ggplot(data = don.ismar) +
-aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+aes(x = X, y = Y) + geom_miss_point(size = 2) + labs(title="MAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 ```{r, echo = F, fig.cap="Répartition des données manquantes MNAR"}
 ggplot(data = don.ismnar) +
-aes(x = X, y = Y) + geom_miss_point(size = 4) + labs(title="MNAR") + theme(plot.title = element_text(size = 20, color = "black", face = "bold"))
+aes(x = X, y = Y) + geom_miss_point(size = 2) + labs(title="MNAR") + theme(plot.title = element_text(size = 15, color = "black", face = "bold"))
 ```
 
 Nous remarquons que pour la deuxième configuration, les valeurs manquantes sont plutôt associées à un $X$ positif, tandis que dans les deux autres cas, elles sont reparties dans les négatifs également.
@@ -1329,7 +1328,7 @@ Concrètement, pour réaliser cette méthode, il nous faut tirer aléatoirement 
 
 Nous visualisons ensuite les données pour s'assurer que la distribution des données imputées est globalement la même que celle des données initiales.
 
-```{r, echo = F, fig.height=4,fig.height=4, fig.cap="Imputation simple par régression stochastique MCAR"}
+```{r, echo = F, fig.height=4,fig.height=4, fig.cap="MCAR - Imputation simple par régression stochastique"}
 set.seed(122)
 don.ismcar.irs <- complete(mice(don.ismcar, method = "norm.nob", m = 1, print = FALSE))
 don.ismar.irs <- complete(mice(don.ismar, method = "norm.nob", m = 1, print = FALSE))
@@ -1348,7 +1347,7 @@ legend("topleft",
        col = c("black", "red", "blue"))
 ```
 
-```{r, echo = F, fig.height=4,fig.cap="Imputation simple par régression stochastique MAR"}
+```{r, echo = F, fig.height=4,fig.cap="MAR - Imputation simple par régression stochastique"}
 plot(don.ismar.irs$X[!is.na(don.ismar$Y)], don.ismar.irs$Y[!is.na(don.ismar$Y)],  
      xlim = c(-3, 3), ylim = c(- 5, 5),
      main = "MAR",
@@ -1362,7 +1361,7 @@ legend("topleft",
        col = c("black", "red", "blue"))
 ```
 
-```{r, echo = F, fig.height=4,fig.cap="Imputation simple par régression stochastique MNAR"}
+```{r, echo = F, fig.height=4,fig.cap="MNAR - Imputation simple par régression stochastique"}
 
 plot(don.ismnar.irs$X[!is.na(don.ismnar$Y)], don.ismnar.irs$Y[!is.na(don.ismnar$Y)],  
      xlim = c(-3, 3), ylim = c(- 5, 5),
@@ -1415,20 +1414,21 @@ La méthode précédente ayant des résultats encourageants, nous souhaitons pou
 
 Nous obtenons alors $20$ jeu de données imputés. Regardons les valeurs pour chacun d'eux, dans les trois cas que nous étudions :
 
-```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression stochastique"}
+```{r, echo = F, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique"}
 set.seed(123)
 don.ismcar.irs20 <- mice(don.ismcar, method = "norm.nob", m = 20, print = FALSE)
 don.ismar.irs20 <- mice(don.ismar, method = "norm.nob", m = 20, print = FALSE)
 don.ismnar.irs20 <- mice(don.ismnar, method = "norm.nob", m = 20, print = FALSE)
 
-stripplot(don.ismcar.irs20, pch = 20, cex = 1.2, main = "MCAR")
+stripplot(don.ismcar.irs20, pch = 20, cex = 1, cex.main = 1, main = "MCAR")
 ```
 
-```{r, echo = F, fig.height=4,fig.cap= "Imputation multiple par régression stochastique MCAR"}
-stripplot(don.ismar.irs20, pch = 20, cex = 1.2, main = "MAR")
+```{r, echo = F, fig.height=4,fig.cap= "MAR - Imputation multiple par régression stochastique"}
+stripplot(don.ismar.irs20, pch = 20, cex = 1, cex.main = 1, main = "MAR")
 ```
-```{r, echo = F, fig.height=4,fig.cap= "Imputation multiple par régression stochastique MNAR"}
-stripplot(don.ismnar.irs20, pch = 20, cex = 1.2, main = "MNAR")
+
+```{r, echo = F, fig.height=4,fig.cap= "MNAR - Imputation multiple par régression stochastique"}
+stripplot(don.ismnar.irs20, pch = 20, cex = 1, cex.main = 1, main = "MNAR")
 ```
 
 Les données imputées se trouvant en rouge, nous remarquons que chaque imputation est différente, mais respecte la distribution des données initiales.
@@ -1484,21 +1484,21 @@ Enfin, nous allons tester de réaliser une nouvelle fois une imputation multiple
 
 Nous obtenons les distributions suivantes :
 
-```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression MCAR"}
-set.seed(123)
+```{r, echo = F, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression"}
+set.seed(124)
 don.ismcar.ir20 <- mice(don.ismcar, method = "norm", m = 20, print = FALSE)
 don.ismar.ir20 <- mice(don.ismar, method = "norm", m = 20, print = FALSE)
 don.ismnar.ir20 <- mice(don.ismnar, method = "norm", m = 20, print = FALSE)
 
-stripplot(don.ismcar.ir20, pch = 20, cex = 1.2, main = "MCAR")
+stripplot(don.ismcar.ir20, pch = 20, cex = 1, cex.main = 1, main = "MCAR")
 ```
 
-```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression MAR"}
-stripplot(don.ismar.ir20, pch = 20, cex = 1.2, main = "MAR")
+```{r, echo = F, fig.height=4, fig.cap= "MAR - Imputation multiple par régression"}
+stripplot(don.ismar.ir20, pch = 20, cex = 1, cex.main = 1, main = "MAR")
 ```
 
-```{r, echo = F, fig.height=4, fig.cap= "Imputation multiple par régression MNAR"}
-stripplot(don.ismnar.ir20, pch = 20, cex = 1.2, main = "MNAR")
+```{r, echo = F, fig.height=4, fig.cap= "MNAR - Imputation multiple par régression MNAR"}
+stripplot(don.ismnar.ir20, pch = 20, cex = 1, cex.main = 1, main = "MNAR")
 ```
 
 Nous calculons ensuite les moyennes et nous obtenons les résultats suivants :
@@ -1524,7 +1524,7 @@ Le deuxième jeu de données obtient encore de bons résultats. L'imputation par
 
 Regardons si cela se confirme pour les intervalles de confiance associés aux moyennes :
 
-```{r}
+```{r, echo =F}
 inf_mcar.ir20 <- summary(fitpool_mcar.ir20, conf.int = TRUE)[7]
 sup_mcar.ir20 <- summary(fitpool_mcar.ir20, conf.int = TRUE)[8]
 
@@ -1748,26 +1748,29 @@ mat.irs <- matrix(c(mean.mcar.irs,mean.mar.irs,mean.mnar.irs), ncol = 3)
 mat.irs20 <- matrix(c(mean.mcar.irs20,mean.mar.irs20,mean.mnar.irs20), ncol = 3)
 mat.ir20 <- matrix(c(mean.mcar.ir20,mean.mar.ir20,mean.mnar.ir20), ncol = 3)
 
-matplot(mat.cc, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Cas complets")
-legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+matplot(mat.cc, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Cas complets")
+legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
 ```
 
 ```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation simple par la moyenne"}
-matplot(mat.im, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation simple par la moyenne")
-legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+matplot(mat.im, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Imputation simple par la moyenne")
+legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
 ```
 
 ```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation simple par régression stochastique"}
-matplot(mat.irs, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation simple par régression stochastique")
-legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+matplot(mat.irs, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Imputation simple par régression stochastique")
+legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
 ```
+
 ```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation multiple par régression stochastique"}
-matplot(mat.irs20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation multiple par régression stochastique")
-legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+matplot(mat.irs20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Imputation multiple par régression stochastique")
+legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
 ```
-```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation multiple par régression"}
-matplot(mat.ir20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", main = "Imputation multiple par régression")
-legend(5, 0.4, c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"))
+
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y apr§s imputation multiple par régression"}
+matplot(mat.ir20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Imputation multiple par régression")
+legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
+
 ```
 
 Tout d'abord, nous remarquons que les moyennes obtenues avec le mécanisme MCAR sont toujours autour de $0$. Lorsque les impuations sont réalisées par régression, les moyennes du jeu de données associé au mécanisme MAR s'améliorent nettement et se rapprochent de la valeur attendue. Quant au mécansime MNAR, peu importe les méthodes d'imputation utilisées par la suite, les moyennes estimées sont toujours dans les négatifs. Nous confirmons alors la complexité d'analyse des jeux de données ayant des valeurs manquantes de ce type.
@@ -1811,40 +1814,40 @@ Les imputations multiples obtiennent donc des intervalles plus grands mais tente
 
 -   Taux de couverture de l'intervalle de confiance
 
-Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons dans le tableau suivant :
+Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons en pourcentage dans le tableau suivant :
 
 ```{r, echo=F}
-tc.mcar.cc <- sum(sign(IC.mcar.cc[,1]*IC.mcar.cc[,2])<0)
-tc.mar.cc <- sum(sign(IC.mar.cc[,1]*IC.mar.cc[,2])<0)
-tc.mnar.cc <- sum(sign(IC.mnar.cc[,1]*IC.mnar.cc[,2])<0)
+tc.mcar.cc <- (sum(sign(IC.mcar.cc[,1]*IC.mcar.cc[,2])<0)*100/200)
+tc.mar.cc <- (sum(sign(IC.mar.cc[,1]*IC.mar.cc[,2])<0)*100/200)
+tc.mnar.cc <- (sum(sign(IC.mnar.cc[,1]*IC.mnar.cc[,2])<0)*100/200)
 
-tc.mcar.im <- sum(sign(IC.mcar.im[,1]*IC.mcar.im[,2])<0)
-tc.mar.im <- sum(sign(IC.mar.im[,1]*IC.mar.im[,2])<0)
-tc.mnar.im <- sum(sign(IC.mnar.im[,1]*IC.mnar.im[,2])<0)
+tc.mcar.im <- (sum(sign(IC.mcar.im[,1]*IC.mcar.im[,2])<0)*100/200)
+tc.mar.im <- (sum(sign(IC.mar.im[,1]*IC.mar.im[,2])<0)*100/200)
+tc.mnar.im <- (sum(sign(IC.mnar.im[,1]*IC.mnar.im[,2])<0)*100/200)
 
-tc.mcar.irs <- sum(sign(IC.mcar.irs[,1]*IC.mcar.irs[,2])<0)
-tc.mar.irs <- sum(sign(IC.mar.irs[,1]*IC.mar.irs[,2])<0)
-tc.mnar.irs <- sum(sign(IC.mnar.irs[,1]*IC.mnar.irs[,2])<0)
+tc.mcar.irs <- (sum(sign(IC.mcar.irs[,1]*IC.mcar.irs[,2])<0)*100/200)
+tc.mar.irs <- (sum(sign(IC.mar.irs[,1]*IC.mar.irs[,2])<0)*100/200)
+tc.mnar.irs <- (sum(sign(IC.mnar.irs[,1]*IC.mnar.irs[,2])<0)*100/200)
 
-tc.mcar.irs20 <- sum(sign(IC.mcar.irs20[,1]*IC.mcar.irs20[,2])<0)
-tc.mar.irs20 <- sum(sign(IC.mar.irs20[,1]*IC.mar.irs20[,2])<0)
-tc.mnar.irs20 <- sum(sign(IC.mnar.irs20[,1]*IC.mnar.irs20[,2])<0)
+tc.mcar.irs20 <- (sum(sign(IC.mcar.irs20[,1]*IC.mcar.irs20[,2])<0)*100/200)
+tc.mar.irs20 <- (sum(sign(IC.mar.irs20[,1]*IC.mar.irs20[,2])<0)*100/200)
+tc.mnar.irs20 <- (sum(sign(IC.mnar.irs20[,1]*IC.mnar.irs20[,2])<0)*100/200)
 
-tc.mcar.ir20 <- sum(sign(IC.mcar.ir20[,1]*IC.mcar.ir20[,2])<0)
-tc.mar.ir20 <- sum(sign(IC.mar.ir20[,1]*IC.mar.ir20[,2])<0)
-tc.mnar.ir20 <- sum(sign(IC.mnar.ir20[,1]*IC.mnar.ir20[,2])<0)
+tc.mcar.ir20 <- (sum(sign(IC.mcar.ir20[,1]*IC.mcar.ir20[,2])<0)*100/200)
+tc.mar.ir20 <- (sum(sign(IC.mar.ir20[,1]*IC.mar.ir20[,2])<0)*100/200)
+tc.mnar.ir20 <- (sum(sign(IC.mnar.ir20[,1]*IC.mnar.ir20[,2])<0)*100/200)
 
 L <- rbind(data.frame('1'= tc.mcar.cc, '2' = tc.mar.cc, '3' = tc.mnar.cc),data.frame('1'= tc.mcar.im,'2'= tc.mar.im,'3' = tc.mnar.im),data.frame('1'= tc.mcar.irs,'2'= tc.mar.irs,'3' = tc.mnar.irs), data.frame('1'= tc.mcar.irs20,'2'= tc.mar.irs20,'3' = tc.mnar.irs20), data.frame('1'= tc.mcar.ir20,'2'= tc.mar.ir20,'3' = tc.mnar.ir20))
 
 colnames(L) <- c("MCAR", "MAR", "MNAR")
 rownames(L) <- c("Cas complets", "Imputation par la moyenne", "Imputation simple par régression stochastqiue", "Imputation multiple par régression stochastique", "Imputation multiple par régression")
 
-kable(data.frame(L), col.names = c("MCAR", "MAR", "MNAR"), position="H", caption = "Taux de couverture de l'intervalle de confiance")
+kable(data.frame(L), col.names = c("MCAR", "MAR", "MNAR"), position="H", caption = "Taux de couverture de l'intervalle de confiance (en %)")
 ```
 
 Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longeur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
 
-\newpage 
+\newpage
 
 **Conclusion :** Nous avons comparé trois mécanismes de répartition des données manquantes (MCAR, MAR et MNAR) sur un jeu de données où nous avons réalisé une analyse des cas complets, deux imputations simples (par la moyenne et par régression stochastique) et deux imputations multiples (par régression stochastique et régression). Après différentes études, nous en concluons de bons résultats pour le mécanisme MCAR ainsi que pour le mécanisme MAR sur les imputations par régression. Quand aux différentes méthodes d'imputation, les résultats des impuations simples semblaient meilleurs mais avec toutes les limites qu'ils comportent sur la variabilité des données. Ainsi, une imputation multiple est donc conseillée. Nous avons obtenu de meilleurs résultats lorsqu'elle était par régression stochastique pour la longueur de l'intervalle. Cependant, pour le taux de couverture, l'imputation multiple par régression était légèrement plus performante.
 
@@ -1901,15 +1904,17 @@ c <- sum(is.na(amp.mnar$amp))/(nrow(amp.mnar$amp)*ncol(amp.mnar$amp))
 kable(data.frame(a, b, c), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Proportion de données manquantes")
 
 ```
-Nous avons donc une proportion de ~10% de données manquantes générées.
+
+Nous avons donc une proportion de \~10% de données manquantes générées.
 
 ### Analyse exploratoire
 
-Nous allons maintenant explorer et analyser les 3 dispositifs de données manquantes créés précedemment. Dans un premier temps, nous ferons une analyse univariée, puis une analyse bivariée et pour finir nous ferons une analyse muldimentionnelle. 
+Nous allons maintenant explorer et analyser les 3 dispositifs de données manquantes créés précedemment. Dans un premier temps, nous ferons une analyse univariée, puis une analyse bivariée et pour finir nous ferons une analyse muldimentionnelle.
 
 **Analyse univariée**
 
 Nous allons utiliser la fonction `aggr` du package `VIM` pour l'analyse univariée.
+
 
 ```{r, echo = F, fig.cap = MCAR}
 aggr(amp.mcar$amp, col=c('navyblue','red'),
@@ -1922,7 +1927,10 @@ aggr(amp.mcar$amp, col=c('navyblue','red'),
 
 Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes, soit 50% des lignes dans notre cas. Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple, 11,4% de lignes qui contiennent des données manquantes pour la variable "WatrCont".
 
+
+
 ```{r, echo = F, fig.cap = MAR}
+
 aggr(amp.mar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1931,9 +1939,12 @@ aggr(amp.mar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
+
+
 On observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas. 
 
 ```{r, echo = F, fig.cap = MNAR}
+
 aggr(amp.mnar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1941,6 +1952,7 @@ aggr(amp.mnar$amp, col=c('navyblue','red'),
                   cex.axis=.7, gap=3,
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
+
 
 Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes. 
 
@@ -1950,6 +1962,7 @@ Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package 
 Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le V de Cramer se rapproche de 1, plus l'intensité de la relation est forte. Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
 
 Nous avons vu que dans le dispositif MCAR, les variables `SubsDens` et `prop` sont les deux variables ayant le plus de données manquantes. Nous allons donc voir si ces 2 variables ont une forte relation. Nous allons, de plus, tester sur différentes paires de variables.
+
 
 ```{r, echo = F}
 tab <- table(amp.mcar$amp$SubsDens, amp.mcar$amp$prop, useNA= "always")
@@ -1964,6 +1977,7 @@ c4 <- CramerV(tab2)
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/SubsDens", "WatrCont/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MCAR)")
 ```
 
+
 ```{r, echo = F}
 tab <- table(amp.mar$amp$SubsDens, amp.mar$amp$prop, useNA= "always")
 c1 <- CramerV(tab)
@@ -1977,6 +1991,7 @@ c4 <- CramerV(tab3)
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/WatrCont", "SubsDens/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MAR)")
 ```
 
+
 ```{r, echo = F}
 tab <- table(amp.mnar$amp$SubsDens, amp.mnar$amp$prop, useNA= "always")
 c1 <- CramerV(tab)
@@ -1989,10 +2004,11 @@ c4 <- CramerV(tab3)
 
 kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop", "Galumna/WatrCont", "SubsDens/totalabund"), row.names = FALSE, position="H", caption = "V de Cramer (MNAR)")
 ```
-Le V de Cramer est tres proche de 1 pour chaque paire de variable et chaque dispositif, ce qui signifie que les variables ont une forte relation 2 à 2. 
 
+Le V de Cramer est tres proche de 1 pour chaque paire de variable et chaque dispositif, ce qui signifie que les variables ont une forte relation 2 à 2.
 
-**Analyse muldimentionnelle** 
+**Analyse muldimentionnelle**
+
 
 Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle.
 L’analyse des correspondances multiples est une technique descriptive visant à résumer l’information contenu dans un grand nombre de variables afin de faciliter l’interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles.
@@ -2000,6 +2016,7 @@ L’analyse se concentre sur ses deux premiers axes qui constitueront un bon ré
 Le nom des variable finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o". 
 
 ```{r, echo = F, fig.height=4, fig.cap=MCAR}
+
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
 mis.ind[is.na(amp.mcar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mcar$amp)
@@ -2007,7 +2024,9 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
+
 ```{r, echo = F, fig.height=4, fig.cap=MAR}
+
 mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
 mis.ind[is.na(amp.mar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mar$amp)
@@ -2015,7 +2034,9 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
+
 ```{r, echo = F, fig.height=4, fig.cap=MNAR}
+
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
 mis.ind[is.na(amp.mnar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mnar$amp)
@@ -2026,57 +2047,67 @@ plot(resMCA,invis="ind",title="MCA graph of the categories")
 DONT KNOW
 Je sais pas/plus comment lire ces graphes. Quoi en dire ??? -> Rien sur le diapo de Lise
  
+
 ### Imputation les données manquantes
 
 Nous allons maintenant imputer les données manquantes sur les 3 dispositifs que nous avons crés précédement.
 
-**Imputation simple** 
+**Imputation simple**
 
 #### Par la moyenne
-\  
 
-Nous utilisons  la fonction `impute` du package `Hmisc`.
+ 
+
+Nous utilisons la fonction `impute` du package `Hmisc`.
 
 **MCAR**
+
 ```{r}
 dat.moy.mcar=impute(amp.mcar$amp, what=mean)
 ```
 
 **MAR**
+
 ```{r}
 dat.moy.mar=impute(amp.mar$amp, what=mean)
 ```
 
 **MNAR**
+
 ```{r}
 dat.moy.mnar=impute(amp.mnar$amp, what=mean)
 ```
 
 #### Par la médiane
-\  
 
-Nous utilisons aussi la fonction `impute` du package `Hmisc`.
-**MCAR**
+ 
+
+Nous utilisons aussi la fonction `impute` du package `Hmisc`. **MCAR**
+
 ```{r}
 dat.med.mcar=impute(amp.mcar$amp, fun=median)
 ```
 
 **MAR**
+
 ```{r}
 dat.med.mar=impute(amp.mar$amp, fun=median)
 ```
 
 **MNAR**
+
 ```{r}
 dat.med.mnar=impute(amp.mnar$amp, fun=median)
 ```
 
 #### LOVF (Last observation carries forward)
-\  
+
+ 
 
 Cette méthode remplace la valeur manquante par la dernière valeur disponible (cas de données longitudinales). Cependant, cette méthode peut donner des résultats biaisées, même en présence de MCAR. Nous utilisons la fonction `na.locf` du package `zoo`.
 
 **MCAR**
+
 ```{r}
 dat.locf=na.locf(amp.mcar$amp,na.rm=FALSE)
 dat.locf=na.locf(dat.locf,na.rm=FALSE,
@@ -2084,6 +2115,7 @@ dat.locf=na.locf(dat.locf,na.rm=FALSE,
 ```
 
 **MAR**
+
 ```{r}
 dat.locf=na.locf(amp.mar$amp,na.rm=FALSE)
 dat.locf=na.locf(dat.locf,na.rm=FALSE,
@@ -2091,6 +2123,7 @@ dat.locf=na.locf(dat.locf,na.rm=FALSE,
 ```
 
 **MNAR**
+
 ```{r}
 dat.locf=na.locf(amp.mnar$amp,na.rm=FALSE)
 dat.locf=na.locf(dat.locf,na.rm=FALSE,
@@ -2098,31 +2131,37 @@ dat.locf=na.locf(dat.locf,na.rm=FALSE,
 ```
 
 #### k plus proches voisins kNN
-\  
 
-L’idée de cette méthode est de calculer les distances entre observations, et d’attribuer aux données manquantes la moyenne des valeurs observées chez les k plus proches voisins. Nous utilisons la fonction `kNN` du package `VIM`.
+ 
+
+L'idée de cette méthode est de calculer les distances entre observations, et d'attribuer aux données manquantes la moyenne des valeurs observées chez les k plus proches voisins. Nous utilisons la fonction `kNN` du package `VIM`.
 
 **MCAR**
+
 ```{r}
 dat.kNN=kNN(amp.mcar$amp, k=5, imp_var=FALSE)
 ```
 
 **MAR**
+
 ```{r}
 dat.kNN=kNN(amp.mar$amp, k=5, imp_var=FALSE)
 ```
 
 **MNAR**
+
 ```{r}
 dat.kNN=kNN(amp.mnar$amp, k=5, imp_var=FALSE)
 ```
 
 #### Loess (Régression locale)
-\  
 
-Cette méthode consiste à construire un polynôme de degré faible par méthode des moindres carrés pondérés en fonction de la proximité entre les observations jugées semblables à celle sur laquelle nous voulons procéder à l’imputation. 
+ 
+
+Cette méthode consiste à construire un polynôme de degré faible par méthode des moindres carrés pondérés en fonction de la proximité entre les observations jugées semblables à celle sur laquelle nous voulons procéder à l'imputation.
 
 **MCAR**
+
 ```{r}
 dat.imputed=rbind(colnames(amp.mcar$amp),amp.mcar$amp)
 indices=1:nrow(amp.mcar$amp)
@@ -2131,12 +2170,16 @@ predict(locfit(j[-1] ~ indices), indices)
 })
 head(dat.loess)
 ```
+
 Avec cette méthode nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées. Nous ne prenons donc pas cette méthode en considération dans notre analyse.
 
+
 #### missForests
-\  
+
+ 
 
 **MCAR**
+
 ```{r}
 dat.missForest<-missForest(amp.mcar$amp,maxiter=10,
         ntree = 200, variablewise = TRUE)$ximp
@@ -2144,6 +2187,7 @@ head(dat.missForest)
 ```
 
 Comme pour la méthode Loess, nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées.
+
 
 A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 

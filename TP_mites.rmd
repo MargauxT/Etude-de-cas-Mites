@@ -84,7 +84,7 @@ str(mites)
 
 -   **Substrate** (facteur) : type de substrat, facteur à 7 modalités
 
--   **Shrub** (facteur) : buissons, facteur à trois modalités
+-   **Shrub** (facteur) : buissons, facteur à 3 modalités
 
 -   **Topo** (facteur) : microtopographie, facteur à 2 modalités
 
@@ -135,7 +135,7 @@ Nous pouvons observer la distribution des variables quantitatives SubsDens et Wa
 ggplot(data = mites) + geom_bar(mapping = aes(Substrate), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Substrate")
 ```
 
-Les deux types de substrat majoritaires sont "Interface" et "Sphagn1", qui sont chacun le substrat d'environ 25 coeurs sur les 70 totaux. \newline
+Les deux types de substrat majoritaires sont "Interface" et "Sphagn1", avec environ 25 coeurs chacun sur les 70 au total. \newline
 
 ```{r, echo=F, fig.cap="Distribution de Shrub"}
 ggplot(data = mites) + geom_bar(mapping = aes(Shrub), fill="darkred")  +labs(y = "Nombre de coeurs", x = "Shrub")
@@ -368,7 +368,7 @@ p2 <- ggplot(data=mites, aes(Substrate, fill=Topo)) + geom_bar() +scale_fill_man
 grid.arrange(p1, p2, nrow=1)
 ```
 
-Du fait du peu de donées que nous avons à disposition, il est difficile de conclure à partir des graphiques.
+Du fait du peu de données que nous avons à disposition, il est difficile de conclure à partir des graphiques.
 
 \newpage
 
@@ -412,7 +412,7 @@ Dans le cadre de notre étude, nous essaierons des transformations adaptées aux
 
  
 
-Deux des principales transformations qui permettent de stabiliser la variance pour les données en proportion sont la transformation $logit$ et la transformation $arcsin$. Cependant, pour des données écologiques, la transformation $arcsin$ est souvent préférée car il est courant d'avoir des proportions à 0% ou 100%, ce qui pose problème pour effectuer une transformation $logit$. En effet, cela ferait donnerait lieu à des valeurs de $-\infty$ pour des proportions égales à 0. On rappelle que c'est notre cas : nous avions remarqué, lors de notre analyse préliminaire des données, que plusieurs observations avaient une valeur de 0 pour la variable prop. Il est donc impossible ici d'utiliser une transformation $logit$ sur les données.
+Deux des principales transformations qui permettent de stabiliser la variance pour les données en proportion sont la transformation $logit$ et la transformation $arcsin$. Cependant, pour des données écologiques, la transformation $arcsin$ est souvent préférée car il est courant d'avoir des proportions à 0% ou 100%, ce qui pose problème pour effectuer une transformation $logit$. En effet, cela donnerait lieu à des valeurs de $-\infty$ pour des proportions égales à 0. On rappelle que c'est notre cas : nous avions remarqué, lors de notre analyse préliminaire des données, que plusieurs observations avaient une valeur de 0 pour la variable prop. Il est donc impossible ici d'utiliser une transformation $logit$ sur les données.
 
 **Transformation Arcsin :**
 
@@ -518,7 +518,7 @@ title(main="lm(BoxCox(pa)~.)", line=1.4)
 cat("p-value pour le test de Shapiro-Wilk : ",shapiro.test(lm.tot.pa.bc$residuals)$p.value)
 ```
 
-Une nouvelle fois, graphiquement la transformation ne semble pas avoir amélioré la normalité des résidus. Pour le test de Shapiro-Wilk, on obtient une p-value très faible donc on rejette une fois de plus l'hypohtèse de normalité des résidus.
+Une nouvelle fois, graphiquement la transformation ne semble pas avoir amélioré la normalité des résidus. Pour le test de Shapiro-Wilk, on obtient une p-value très faible donc on rejette une fois de plus l'hypothèse de normalité des résidus.
 
 \newpage
 
@@ -531,7 +531,7 @@ lambda <- bc$x[which.max(bc$y)]
 cat("Lambda_1 optimal : ", lambda)
 ```
 
-On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-147$. Il s'agit d'une valeur de $\lambda_1$ très élevée comparée aux valeurs précédents, mais c'est celle qui maximise la log-vraisemblance.
+On réajuste un modèle sur les données transformées par Box & Cox avec $\lambda_1=-147$. Il s'agit d'une valeur de $\lambda_1$ très élevée comparée aux valeurs précédentes, mais c'est celle qui maximise la log-vraisemblance.
 
 ```{r, echo=F, warning=F, fig.cap="QQ-plot : à gauche sur données prop, à droite sur données prop après transformation de Box Cox"}
 lm.tot.prop.bc <- lm(((prop+1)^lambda-1)/lambda ~.-pa-Galumna-totalabund, data=mites)
@@ -550,11 +550,11 @@ Graphiquement, la transformation semble avoir légèrement amélioré la normali
 
 **Conclusion :**
 
-Dans cette première partie de l'analyse du jeu de données "mites", nous avons tenté d'ajuster un modèle linéaire gaussien sur trois variables explicatives. Cependant, l'une des difficultés lorsque l'on ajuste un modèle linéaire est qu'il doit vérifier un certain nombre d'hypothèses. Dans notre cas, il y avait toujours au moins une hypothèse qui n'était pas vérifiée. Nous avons donc mis en place des transformations de données, adaptées à nos variables, afin que le modèle vérifie les hypothèses. Malheureusement, ces transformations n'ont pas permis de valider les hypothèses, en particulier celle de normalité des résidus.\
+Dans cette première partie de l'analyse du jeu de données `mites`, nous avons tenté d'ajuster un modèle linéaire gaussien sur trois variables explicatives. Cependant, l'une des difficultés lorsque l'on ajuste un modèle linéaire est qu'il doit vérifier un certain nombre d'hypothèses. Dans notre cas, il y avait toujours au moins une hypothèse qui n'était pas vérifiée. Nous avons donc mis en place des transformations de données, adaptées à nos variables, afin que le modèle vérifie les hypothèses. Malheureusement, ces transformations n'ont pas permis de valider les hypothèses, en particulier celle de normalité des résidus.\
 Dans la pratique, il existe de nombreuses autres distributions de probabilité pour décrire les données : Poisson, Bernouilli, Binomiale... Nous allons donc essayer une autre approche pour ajuster un modèle sur nos données : les modèles linéaires généralisés.\
 Un modèle linéaire généralisé a quatre composantes :
 
-1.  les variables réponses $Y_1, Y_2,…, Y_n$ sont supposées suivre la même distrubtion appartenant à la **famille exponentielle**
+1.  les variables réponses $Y_1, Y_2,…, Y_n$ qui sont supposées suivre la même distrubtion appartenant à la **famille exponentielle**
 
 2.  un vecteur de paramètres $\beta$ à estimer et des variables explicatives $X=[1,x^ 1,…,x^p]$
 
@@ -586,7 +586,7 @@ Ici, le modèle linéaire généralisé est composé de :
 
 1.  la variable réponse $Y_i, i=1,...,n$ qui suit une distribution de Bernouilli de paramètre $\pi_i$
 
-2.  un vecteur de paramètre $\beta$ à estimer et des variables explictives $X=[1,x^1,…,x^p]$
+2.  un vecteur de paramètre $\beta$ à estimer et des variables explicatives $X=[1,x^1,…,x^p]$
 
 3.  la fonction de lien $g$ nommée $logit$. Elle est définie de $[0,1]$ sur $\mathbb{R}$ par $g(\pi)=ln(\frac{\pi}{1-\pi})$, soit $\pi_i=g^{-1}(x_i^T\beta)=\frac{\exp(x_i^T\beta)}{1+\exp(x_i^T\beta)}$
 
@@ -627,7 +627,7 @@ $$F=\frac{n-p}{q} \frac{SCR_c-SCR}{SCR} \sim F(q,n-p)$$ où $SCR$ est la somme d
 anova(glm.best.pa, glm.tot.pa, test = 'Chisq')
 ```
 
-La grande p-value nous indique que les variables présentes dans le plus grand modèle mais pas dans les plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critère BIC (critère explicatif) pour chacun des deux modèles.
+La grande p-value nous indique que les variables présentes dans le plus grand modèle mais pas dans le plus petit ne sont pas significatives. Avant de confirmer le choix de ce modèle, regardons les valeurs du critère BIC (critère explicatif) pour chacun des deux modèles.
 
 ```{r, echo=F}
 kable(data.frame(BIC(glm.best.pa),BIC(glm.tot.pa)), col.names = c("Petit modèle", "Grand modèle"), caption = "BIC", position="H")
@@ -668,7 +668,7 @@ La sortie de notre modèle indique que le contenu en eau, la densité du substra
 kable(data.frame(exp(glm.best.pa$coefficients),row.names=c("Intercept", "WatrCont", "SubsDens", "TopoHummock")), col.names=c("Odds-ratios"), caption="Odds-ratios du modèle expliquant pa", position ="H")
 ```
 
-Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (`WatrCont`), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis ce que pour une unité de densité du substrat (`SubsDens`) en plus, le risque est plus élevé de $18$%. Enfin, lorsque de la topographie est de type Hummock, il y a énormément de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
+Grâce à ces coefficients, nous pouvons déterminer le pourcentage de probabilité de la présence de mites, lorsque que l'on augmente l'une des variables. En effet, pour chaque augmentation d'une unité du contenu en eau (`WatrCont`), nous avons $2.2$% ($0.978*100 - 100$) de risque en moins d'avoir une présence de mites, tandis que pour une unité de densité du substrat (`SubsDens`) en plus, le risque est plus élevé de $18$%. Enfin, lorsque la topographie est de type Hummock, il y a énormément de probabilité d'avoir des mites, pusique celle-ci augmente de plus de $1400$%.
 
 ### Validation du modèle
 
@@ -785,8 +785,8 @@ table(pred>0.5, mites$pa)
 ```
 
 D'après cette matrice, nous avons prédit quarante fois l'abscence de mites et vingt-trois fois leur présence en ayant raison. Cependant, le modèle s'est trompé sept fois : cinq fois en ayant prédit l'abscence de mites à tort et deux fois leur présence à tort. Par conséquent, le taux d'erreur est de $\frac{7}{70}=0.1$. On peut en conclure que ce modèle a de bonnes qualités de classification.
-
-**Conclusion :** Nous en déduisons que le modèle \@ref(eq:a) de régression logistique expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient de bons résultats, tant sur son ajustement que sur son pouvoir de classification.
+\  
+Nous en déduisons que le modèle \@ref(eq:a) de régression logistique expliquant l'occurrence de mites grâce au contenu en eau, à la densité du substrat et à la topographie obtient de bons résultats, tant sur son ajustement que sur son pouvoir de classification.
 
 \newpage
 
@@ -869,8 +869,7 @@ On peut interpréter les coefficients du modèle pour nos trois variables grâce
 kable(data.frame(exp(prop.reg.best$coefficients),row.names=c("Intercept", "WatrCont", "SubsDens", "TopoHummock")), col.names=c("Odds-ratios"), caption="Odds-ratios du modèle expliquant prop", position="H")
 ```
 
-L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa p-value associée au test de Wald est inférieure à 5% donc on peut dire que la proportion de mites est significativement moins élevée si la quantité d'eau dans le sol augmente. L'odd-ratio de `SubsDens` est quant à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%. Cela signifie que la proportion de mites sera significativement plus importante si la densité du substrat augmente.\
-Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à 5%. Donc on peut conclure que si la topographie est de type Hummock, la proportion de mites sera significativement plus élevée.
+L'odd-ratio pour la variable `WatrCont` est inférieur à 1. De plus, sa p-value associée au test de Wald est inférieure à 5% donc on peut dire que la proportion de mites est significativement moins élevée si la quantité d'eau dans le sol augmente. L'odd-ratio de `SubsDens` est quant à lui supérieur à 1, et sa p-value pour le test de Wald inférieure à 5%. Cela signifie que la proportion de mites sera significativement plus importante si la densité du substrat augmente. Enfin, l'odd-ratio pour `Topo` vaut 2.07 et sa p-value est inférieure à 5%. Donc on peut conclure que si la topographie est de type Hummock, la proportion de mites sera significativement plus élevée.
 
 ### Validation du modèle
 
@@ -921,7 +920,7 @@ Enfin, nous devons maintenant regarder si notre modèle est "bon". Nous allons, 
     abline(h=c(-2,2), col=2)
     ```
 
-    On voit que les résidus sont répartis de façon homogène autour de l'axe des abscisses. Ils sont pour la plupart proches de 0. Cependant, trois points semblent avoir une valeur de résidu élevée. Peut-être correspondent-ils à des points leviers ou aberrants observés précédemment. Nous pourrions les enlver du jeu de données afin de construire un modèle qui ajusterait encore mieux les données mais nous décidons de les garder car le jeu de données ne contient pas beaucoup d'individus (70) et nous ne voulons pas le réduire davantage. De plus, nous n'avons pas une connaissance très poussée de nos données donc nous ne pourrions pas justifier le retrait de ces individus pour notre étude.
+    On voit que les résidus sont répartis de façon homogène autour de l'axe des abscisses. Ils sont pour la plupart proches de 0. Cependant, trois points semblent avoir une valeur de résidu élevée. Peut-être correspondent-ils à des points leviers ou aberrants observés précédemment. Nous pourrions les enlever du jeu de données afin de construire un modèle qui ajusterait encore mieux les données mais nous décidons de les garder car le jeu de données ne contient pas beaucoup d'individus (70) et nous ne voulons pas le réduire davantage. De plus, nous n'avons pas une connaissance très poussée de nos données donc nous ne pourrions pas justifier le retrait de ces individus pour notre étude.
 
 -   **Evaluation du pouvoir explicatif du modèle**
 
@@ -933,8 +932,8 @@ cat("pseudo-R2 : ", pseudoR2)
 ```
 
 Notre modèle explique $44$% de la variance. Ce score n'est pas très élevé. Cependant, en régression logistique, les valeurs faibles de pseudo-$R^2$ sont souvent courantes.
-
-**Conclusion :** Nous en déduisons que le modèle \@ref(eq:b) de régression logistique expliquant la proportion de mites Galumna grâce au contenu en eau, à la densité du substrat et à la topographie obtient de bons résultats.
+\  
+Nous en déduisons que le modèle \@ref(eq:b) de régression logistique expliquant la proportion de mites Galumna grâce au contenu en eau, à la densité du substrat et à la topographie obtient de bons résultats.
 
 \newpage
 
@@ -1007,7 +1006,7 @@ anova(glm.poi3, glm.poi,test="Chisq")
 La p-value est inférieure à 0.05 donc la variable `Topo` est significative.
 
 Le modele sélectionné s'écrit donc : \begin{equation}
-log(Y)=0.710-0.008*WatrCont+0.034*SubsDens + 0.892*TopoHummock (\#eq:c)
+log(\hat{Y})=0.710-0.008*WatrCont+0.034*SubsDens + 0.892*TopoHummock (\#eq:c)
 \end{equation}
 
 ### Interprétation des coefficients
@@ -1015,7 +1014,7 @@ log(Y)=0.710-0.008*WatrCont+0.034*SubsDens + 0.892*TopoHummock (\#eq:c)
 Nous allons maintenant interpréter les coefficients de notre modèle. Nous allons determiner l'effet de chaque coefficient du modèle sur le prédicteur linéaire $\eta=\beta_0+\beta_1*WatrCont+\beta_2*SubsDens+\beta_3*TopoHummock$.
 
 -   Le coefficient `WatrCont` qui indique le contenu en eau, indique que $\eta$ diminue de 0.008 pour chaque augmentation d'une unité de `WatrCont` si la variable `SubsDens` reste constante. Nous avons donc le facteur $e^{-0.008}=0.99$ qui correspond à une perte de 1% de l'abondance de Galumna par unité de contenu en eau (`WatrCont`) supplémentaire.
--   Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.023$ qui correspond au facteur $e^{0.034}=1.034585$. On en conclut que la densité n'influe pas sur l'abondance de Galumna.
+-   Le coefficient `SubsDens` qui indique la densité, a un changement additif de $0.034$ qui correspond au facteur $e^{0.034}=1.034585$. On en conclut que la densité n'influe pas sur l'abondance de Galumna.
 -   Le coefficient `TopoHummock` qui représente la topographie de type Hummock, a un changement additif de $0.892$ qui correspond au facteur $e^{0.892}=2.440005$. Cela correspond a une augmentation de $250$% de l'abondance de Galumna pour une topographie de type Hummock.
 
 ### Validation du modèle
@@ -1027,7 +1026,7 @@ Enfin, nous passons à la phase de validation du modèle. Nous allons, pour cela
 Pour une distribution de Poisson, $Var(Y)=\mu=E(Y)$. En pratique, on constate que la variance des données dépasse souvent $\mu$, indiquant une surdispersion dans les paramètres du modèle.\
 Par définition, lorsque la déviance résiduelle est supérieure au nombre de degrés résiduels, le modèle est surdispersé. On peut estimer un paramètre de surdispersion $$\phi = \frac{\text{Déviance résiduelle}}{\text{Degré de liberté résiduels}}$$ Nous avons ici :
 
-```{r}
+```{r, echo=F}
 cat("phi = ", glm.poi3$deviance/glm.poi3$df.residual)
 ```
 
@@ -1063,7 +1062,7 @@ On voit que les coefficients ne changent pas, contrairement aux erreurs-types.
     plot(cooks.distance(glm.poi4), type="h", ylab="Distance de Cook")
     ```
 
-    Sur le graphique obtenu, on remarque notamment l'observation 8 qui a une distance de Cook nettement supérieure aux autres. Cela signifie que c'est un point influent. Là encore, il serait necessaire de connaître plus en détails notre jeu de données pour pouvoir l'expliquer et notammant déterminer si c'est un point levier, un point abberrant ou les deux.
+    Sur le graphique obtenu, on remarque notamment l'observation 8 qui a une distance de Cook nettement supérieure aux autres. Cela signifie que c'est un point influent. Là encore, il serait necessaire de connaître plus en détails notre jeu de données pour pouvoir l'expliquer et notamment déterminer si c'est un point levier, un point abberrant ou les deux.
 
     -   Analyse des résidus
 
@@ -1096,7 +1095,7 @@ Le but initial de notre étude était de décrire le jeu de données sur les mit
 
 \newpage
 
-# Données manquantes
+# Données manquantes avec R
 
 ## Scénarios NA sur un jeu de données simulées
 
@@ -1290,7 +1289,7 @@ Nous remarquons ici que les deux premiers jeux de données, correspondants aux t
 
 Pour éviter de supprimer les observations où se trouvent des données manquantes, on peut décider d'imputer des valeurs à ces endroits. Plusieurs méthodes existent pour déterminer la valeur à indiquer. La première que nous testons consiste à imputer le Na par la moyenne de la variable. Toutes les données manquantes seront donc "remplacées" par la même valeur.
 
-Pour l'estimation de la moyenne de la variable ensuite, nous obtenons forcément les mêmes résultats qu'auparavant :
+Pour l'estimation de la "nouvelle" moyenne de la variable, nous obtenons forcément les mêmes résultats qu'auparavant :
 
 ```{r, echo = F}
 don.ismcar.im <- na.aggregate(don.ismcar, FUN = mean)
@@ -1319,7 +1318,7 @@ colnames(IC) <- c("2.5%", "97.5%")
 kable(data.frame(IC), col.names =c("2.5%", "97.5%"), position="H", caption = "Intervalle de confiance associé à la moyenne de Y après imputation simple par la moyenne")
 ```
 
-Les intervalles de confiance ont changés. Il y a maintenant uniquement dans le premier cas (MCAR) que $0$ se situe dans l'intervalle. En effet, pour les deux autres mécansimes, l'intervalle s'est décalé dans les négatifs. De plus, leur longueur a diminué. Ainsi, ils offrent plus de précision dans leur estimation.
+Les intervalles de confiance ont changé. Il y a maintenant uniquement dans le premier cas (MCAR) que $0$ se situe dans l'intervalle. En effet, pour les deux autres mécansimes, l'intervalle s'est décalé dans les négatifs. De plus, leur longueur a diminué. Ainsi, ils offrent plus de précision dans leur estimation.
 
 -   Imputation simple par régression stochastique
 
@@ -1413,7 +1412,7 @@ Les intervalles de confiance obtenus avec cette méthode d'imputation semblent m
 
 La méthode précédente ayant des résultats encourageants, nous souhaitons poursuivre son étude. En effet, une valeur unique ne pouvant pas refléter l'incertitude sur la prédiction, nous allons tester de renouveller vingt fois l'imputation avant de combiner les résultats. C'est ce qu'on appelle l'imputation multiple. Pour la réaliser, nous utilisons toujours la fonction `mice` mais en précisant l'argument `m=20`.
 
-Nous obtenons alors $20$ jeu de données imputés. Regardons les valeurs pour chacun d'eux, dans les trois cas que nous étudions :
+Nous obtenons alors $20$ jeux de données imputés. Regardons les valeurs pour chacun d'eux, dans les trois cas que nous étudions :
 
 ```{r, echo = F, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique"}
 set.seed(123)
@@ -1768,7 +1767,7 @@ matplot(mat.irs20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "
 legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
 ```
 
-```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y apr§s imputation multiple par régression"}
+```{r, echo = F, fig.height=4.5,fig.cap= "Evolution de la moyenne de Y après imputation multiple par régression"}
 matplot(mat.ir20, type = 'l', lty = 1, col = c("red","black", "blue"), ylab = "Moyenne de Y", cex.main = 1, main = "Imputation multiple par régression")
 legend("topleft", c("MCAR", " MAR", "MNAR"), pch = 'l', col = c("red","black", "blue"), cex=0.8)
 
@@ -1809,7 +1808,7 @@ rownames(L) <- c("Cas complets", "Imputation simple par la moyenne", "Imputation
 kable(data.frame(L), col.names = c("MCAR", "MAR", "MNAR"), position="H", caption = "Longueur moyenne de l'intervalle de confiance")
 ```
 
-Nous observons que l'imputation par la moyenne obtient les longueurs d'intervalle les plus faibles, suivie par l'imputation simple par régression stochastique. Cependant, il ne faut pas oublier que dans ces cas, on ne tient pas compte du fait que des valeurs ont été remplacées et on fait comme si c'était de vraies observations. Cela va en général sous-évaluer la variabilité dans les données et peut expliquer des intervalles de confiance plus courts.
+Nous observons que l'imputation par la moyenne obtient les longueurs d'intervalle les plus faibles, suivie par l'imputation simple par régression stochastique. Cependant, il ne faut pas oublier que dans ces cas, on ne tient pas compte du fait que des valeurs ont été remplacées et on fait comme si elles étaient de vraies observations. Cela va en général sous-évaluer la variabilité dans les données et peut expliquer des intervalles de confiance plus courts.
 
 Les imputations multiples obtiennent donc des intervalles plus grands mais tentent de mieux reproduire la variabilité des données. Lorsque l'on compare les deux imputations de ce type effectuées, nous remarquons que celle par régression stochastique semble être plus performante car fournit un intervalle plus précis. De plus, les résultats sont également meilleurs que lorsque l'on a étudié uniquement les cas complets.
 
@@ -1848,11 +1847,9 @@ rownames(L) <- c("Cas complets", "Imputation par la moyenne", "Imputation simple
 kable(data.frame(L), position="H", caption = "Taux de couverture de l'intervalle de confiance")
 ```
 
-Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longeur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
+Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longueur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
 
-\newpage
-
-**Conclusion :** Nous avons comparé trois mécanismes de répartition des données manquantes (MCAR, MAR et MNAR) sur un jeu de données où nous avons réalisé une analyse des cas complets, deux imputations simples (par la moyenne et par régression stochastique) et deux imputations multiples (par régression stochastique et régression). Après différentes études, nous en concluons de bons résultats pour le mécanisme MCAR ainsi que pour le mécanisme MAR sur les imputations par régression. Quand aux différentes méthodes d'imputation, les résultats des impuations simples semblaient meilleurs mais avec toutes les limites qu'ils comportent sur la variabilité des données. Ainsi, une imputation multiple est donc conseillée. Nous avons obtenu de meilleurs résultats lorsqu'elle était par régression stochastique pour la longueur de l'intervalle. Cependant, pour le taux de couverture, l'imputation multiple par régression était légèrement plus performante.
+**Conclusion :** Nous avons comparé trois mécanismes de répartition des données manquantes (MCAR, MAR et MNAR) sur un jeu de données où nous avons réalisé une analyse des cas complets, deux imputations simples (par la moyenne et par régression stochastique) et deux imputations multiples (par régression stochastique et régression). Après différentes études, nous en concluons de bons résultats pour le mécanisme MCAR ainsi que pour le mécanisme MAR sur les imputations par régression. Quant aux différentes méthodes d'imputation, les résultats des imputations simples semblaient meilleures mais avec toutes les limites qu'ils comportent sur la variabilité des données. Ainsi, une imputation multiple est donc conseillée. Nous avons obtenu de meilleurs résultats lorsqu'elle était par régression stochastique pour la longueur de l'intervalle. Cependant, pour le taux de couverture, l'imputation multiple par régression était légèrement plus performante.
 
 \newpage
 
@@ -1865,22 +1862,24 @@ mites1 <- mites[,-c(7,8,9,2)]
 mites1
 ```
 
-```{r}
+```{r, echo=F}
 str(mites1)
 ```
 
 L'utilisation de la fonction `ampute` nécessite une attention particulière. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seule de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes.
 
 ```{r}
+set.seed(123)
 amp.mcar1 = ampute(mites1, prop = 0.10, mech = "MCAR")
 countNA(amp.mcar1$amp)
 ```
 
-En cherchant un peu plus loin, nous avons remarqué que l'argument `prop` signifie la proportion de lignes incomplètes dans notre jeu de données. Nous avons 70 observations pour 5 variables soit 350 données (\~350 cellules). Nous avons donc pensé qu'il était préférable de générer 10% de données manquantes sur l'ensemble de nos données, soit 10% de 350 données, ce qui equivaut à +/- 35 données manquantes. Pour cela, nous devons utiliser l'argument `bycases` comme `FALSE`. En effet, l'argument `bycases` étant `FALSE` signifie que la proportion de données manquantes est définie en terme de cellules et non en terme de lignes, qui est la valeur par défault. Pour spécifier les 3 différents méchanismes MCAR, MAR et MNAR, nous utilisons l'argument `mech`. Voici les lignes de codes nécéssaires pour générer les données manquantes. 
+En cherchant un peu plus loin, nous avons remarqué que l'argument `prop` signifie la proportion de lignes incomplètes dans notre jeu de données. Nous avons 70 observations pour 5 variables soit 350 données (\~350 cellules). Nous avons donc pensé qu'il était préférable de générer 10% de données manquantes sur l'ensemble de nos données, soit 10% de 350 données, ce qui equivaut à +/- 35 données manquantes. Pour cela, nous devons utiliser l'argument `bycases` comme `FALSE`. En effet, l'argument `bycases` étant `FALSE` signifie que la proportion de données manquantes est définie en terme de cellules et non en terme de lignes, qui est la valeur par défaut. Pour spécifier les 3 différents méchanismes MCAR, MAR et MNAR, nous utilisons l'argument `mech`. Voici les lignes de codes nécéssaires pour générer les données manquantes.
 
 -   Mécanisme **MCAR** (**M**issing **C**ompletely **A**t **R**andom)
 
 ```{r}
+set.seed(123)
 amp.mcar = ampute(mites1, prop = 0.10, mech = "MCAR", bycases = FALSE)
 countNA(amp.mcar$amp)
 ```
@@ -1888,6 +1887,7 @@ countNA(amp.mcar$amp)
 -   Mécanisme **MAR** (**M**issing **A**t **R**andom)
 
 ```{r}
+set.seed(123)
 amp.mar = ampute(mites1, prop = 0.10, mech = "MAR", bycases = FALSE)
 countNA(amp.mar$amp)
 ```
@@ -1895,6 +1895,7 @@ countNA(amp.mar$amp)
 -   Mécanisme **MNAR** (**M**issing **N**ot **A**t **R**andom)
 
 ```{r}
+set.seed(123)
 amp.mnar = ampute(mites1, prop = 0.10, mech = "MNAR", bycases = FALSE)
 countNA(amp.mnar$amp)
 ```
@@ -1912,38 +1913,35 @@ Nous avons donc une proportion de \~10% de données manquantes générées.
 
 ### Analyse exploratoire
 
-Nous allons maintenant explorer et analyser les trois dispositifs de données manquantes créés précédemment. Dans un premier temps, nous ferons une analyse univariée, puis une analyse bivariée et pour finir nous ferons une analyse multidimentionnelle.
+Nous allons maintenant explorer et analyser les trois dispositifs de données manquantes créées précédemment. Dans un premier temps, nous ferons une analyse univariée, puis une analyse bivariée et pour finir nous ferons une analyse multidimentionnelle.
 
-**Analyse univariée**
+-   **Analyse univariée**
 
 Nous utilisons la fonction `aggr` du package `VIM` pour l'analyse univariée.
 
-```{r, echo = F, fig.cap = "MCAR"}
-set.seed(123)
+```{r, echo = F, fig.cap = "Visualisation des données manquantes MCAR"}
 aggr(amp.mcar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
                   labels=names(amp.mcar$amp),
                   cex.axis=.7, gap=3,
-                  ylab=c("Proportion de données manquantes","Combinaisons"))
+                  ylab=c("Proportion de NA","Combinaisons"))
 ```
 
-Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente toutes les lignes dans le data frame qui ne comportent pas de données manquantes, soit 51,4% des lignes dans notre cas. Une case rouge représente toutes les lignes dans le data frame qui sont manquantes pour cette variable. Dans notre cas nous avons par exemple, 10% de lignes qui contiennent des données manquantes pour la variable `WatrCont`.
+Les colonnes représentent les variables, les lignes représentent les types de "situations" des données manquantes générées dans le jeu de données. La ligne entière bleue représente la proportion de lignes dans le data frame qui ne comportent pas de données manquantes, soit 48,6% des lignes dans notre cas. Une case rouge représente la proportion de lignes dans le data frame qui contiennent des données manquantes pour la variable. Dans notre cas nous avons par exemple, 10% de lignes qui contiennent des données manquantes pour la variable `WatrCont`.
 
-```{r, echo = F, fig.cap = "MAR"}
-set.seed(123)
+```{r, echo = F, fig.cap = "Visualisation des données manquantes MAR"}
 aggr(amp.mar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
                   labels=names(amp.mar$amp),
                   cex.axis=.7, gap=3,
-                  ylab=c("Proportion de données manquantes","Combinaisons"))
+                  ylab=c("Proportion de NA","Combinaisons"))
 ```
 
-Pour le dispositif MAR, on observe que les variables `Galumna` et `totalabund` ont le plus de données manquantes, soit plus de 12% de données manquantes chacunes en comparaison avec la variable `SubsDens` qui a seulement moins de 6% de données manquantes. L'analyse bivariée sera donc plus intéressante dans ce cas.
+Pour le dispositif MAR, on observe que les variables `SubsDens` et `totalabund` ont le plus de données manquantes, soit plus de 10% de données manquantes chacune. La variable `Galumna` en a environ 8%. 
 
-```{r, echo = F, fig.cap = "MNAR"}
-set.seed(123)
+```{r, echo = F, fig.cap = "Visualisation des données manquantes MNAR"}
 aggr(amp.mnar$amp, col=c('navyblue','red'),
                   numbers=TRUE,
                   sortVars=FALSE,
@@ -1952,11 +1950,11 @@ aggr(amp.mnar$amp, col=c('navyblue','red'),
                   ylab=c("Proportion de données manquantes","Combinaisons"))
 ```
 
-Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour chaque variable est assez similaire. Nous avons pour chaque variable, une proportion de + ou - 10% de données manquantes.
+Dans ce dispositif, MNAR, on remarque que la proportion de données manquantes pour les variables `Galumna`, `totalabund`, `Galumna` est la même. 
 
-**Analyse bivariée**
+-   **Analyse bivariée**
 
-Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`. Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le V de Cramer se rapproche de 1, plus l'intensité de la relation est forte. Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnée. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
+Pour l'analyse bivariée, nous allons utiliser la fonction `CramerV` du package `DescTools`. Le test de Cramer est utilisé pour mesurer l'intensité des relations entre les variables. Nous avons ainsi que plus le V de Cramer se rapproche de 1, plus l'intensité de la relation est forte. Nous utilisons la fonction `table` dans un premier temps pour créer un tableau de contingence entre deux variables que nous avons selectionnées. Il est important de spécifier l'argument `useNA` pour inclure les données manquantes dans notre tableau.
 
 Nous avons vu que dans le dispositif MCAR, les variables `SubsDens` et `prop` sont les deux variables ayant le plus de données manquantes. Nous allons donc voir si ces 2 variables ont une forte relation. Nous allons, de plus, tester sur différentes paires de variables.
 
@@ -2004,11 +2002,11 @@ kable(data.frame(c1, c2, c3, c4), col.names = c("SubsDens/Prop", "Galumna/Prop",
 
 Le V de Cramer est très proche de 1 pour chaque paire de variables et chaque dispositif, ce qui signifie que les variables ont une forte relation 2 à 2.
 
-**Analyse multidimentionnelle**
+-   **Analyse multidimentionnelle**
 
-Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle. L'analyse des correspondances multiples est une technique descriptive visant à résumer l'information contenue dans un grand nombre de variables afin de faciliter l'interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles. L'analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données. Le nom des variables finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o".
+Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle. L'analyse des correspondances multiples est une technique descriptive visant à résumer l'information contenue dans un grand nombre de variables afin de faciliter l'interprétation des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles. L'analyse se concentre sur les deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données. Le nom des variables finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o".
 
-```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCAR", warning=FALSE}
+```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCA pour MCAR", warning=FALSE}
 set.seed(123)
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
@@ -2018,7 +2016,7 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MAR"}
+```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCA pour MAR"}
 set.seed(123)
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
@@ -2028,7 +2026,7 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MNAR"}
+```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCA pour MNAR"}
 set.seed(123)
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
@@ -2042,7 +2040,7 @@ plot(resMCA,invis="ind",title="MCA graph of the categories")
 
 Nous allons maintenant imputer les données manquantes sur les trois dispositifs que nous avons crées précédement. Dans un premier temps, nous effecturons des imputations simples (par la moyenne, la médiane, méthode LOVF...) puis nous terminerons sur une imputation multiple.
 
-**Imputation simple**
+-   **Imputation simple**
 
 #### Par la moyenne
 
@@ -2099,7 +2097,7 @@ dat.med.mnar=impute(amp.mnar$amp, what=median)
 
  
 
-Cette méthode remplace la valeur manquante par la dernière valeur disponible. Cependant, cette méthode peut donner des résultats biaisées, même en présence de MCAR. Nous utilisons la fonction `na.locf` du package `zoo`.
+Cette méthode remplace la valeur manquante par la dernière valeur disponible. Cependant, elle peut donner des résultats biaisés, même en présence de MCAR. Nous utilisons la fonction `na.locf` du package `zoo`.
 
 **MCAR**
 
@@ -2182,17 +2180,17 @@ head(dat.missForest)
 
 Comme pour la méthode Loess, nous remarquons que les variables `Galumna` et `totalabund` ne sont plus des valeurs entières pour les données manquantes imputées.
 
-A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
+A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionne pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 
-**Imputation multiple**
+-  **Imputation multiple**
 
-Dans l'imputation simple, une valeur unique ne peut pas refléter l'incertitude sur la prédiction. Une autre approche est l'imputation multiple, qui consiste à imputer successivement plusieurs valeurs à chaque donnée manquante. Plusieurs jeux de données complétés sont ainsi générés, respectant les caractéristiques de la distribution des données observées (variabilité et corrélation entre les variables). Des analyses standards sont ensuite menées séparément sur chaque jeu de données complétés, puis leurs résultats sont combinés pour fournir un résultat global.
+Comme évoqué précédemment, dans l'imputation simple, une valeur unique ne peut pas refléter l'incertitude sur la prédiction. Une autre approche est l'imputation multiple, qui consiste à imputer successivement plusieurs valeurs à chaque donnée manquante. Plusieurs jeux de données complétés sont ainsi générés, respectant les caractéristiques de la distribution des données observées (variabilité et corrélation entre les variables). Des analyses standards sont ensuite menées séparément sur chaque jeu de données complété, puis leurs résultats sont combinés pour fournir un résultat global.
 
 Nous allons suivre la même démarche que nous avons fait sur les données générées dans la partie précédente toujours en utilisant la fonction `mice`.
 
 -   Imputation multiple par régression stochastique
 
-Nous utilisons l'argument `m=20` ce qui signifie que nous obtenons $20$ jeu de données imputées.
+Nous utilisons l'argument `m=20` ce qui signifie que nous obtenons $20$ jeux de données imputés.
 
 ```{r, echo = F, message=FALSE, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique", warning=FALSE}
 set.seed(123)
@@ -2230,7 +2228,7 @@ fit_mnar.mice <- with(mnar.mice, lm(prop~1))
 fitpool_mnar.mice <- pool(fit_mnar.mice)
 mean.mnar.mice <- fitpool_mnar.mice$pooled[3]
 
-mean(mites1$prop)
+cat("Moyenne de prop avant génération de données manquantes : ",mean(mites1$prop))
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de prop après combinaison des 20 imputations par régression stochastique")
 ```
 
@@ -2251,7 +2249,8 @@ fit_mnar.mice <- with(mnar.mice, lm(Galumna~1))
 fitpool_mnar.mice <- pool(fit_mnar.mice)
 mean.mnar.mice <- fitpool_mnar.mice$pooled[3]
 
-mean(mites1$Galumna)
+cat("Moyenne de prop avant génération de données manquantes : ", mean(mites1$Galumna))
+
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Galumna après combinaison des 20 imputations par régression stochastique")
 ```
 
@@ -2272,15 +2271,16 @@ fit_mnar.mice <- with(mnar.mice, lm(totalabund~1))
 fitpool_mnar.mice <- pool(fit_mnar.mice)
 mean.mnar.mice <- fitpool_mnar.mice$pooled[3]
 
-mean(mites1$totalabund)
+cat("Moyenne de prop avant génération de données manquantes : ",mean(mites1$totalabund))
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de totalabund après combinaison des 20 imputations par régression stochastique")
 ```
 
-Pour ces $3$ variables différentes, ils n'y a pas de dispositif qui se démarquent des autres. Cependant, le dispositif MAR semble être plutot bon sur chaque variable tandis que par exemple le dispositif MNAR est mauvais pour la variable `prop`. Nous retenons donc le dispositif MAR pour l'imputation multiple par régression stochastique.
+Pour ces $3$ variables différentes, ils n'y a pas de dispositif qui se démarque des autres. Cependant, le dispositif MAR semble être plutôt bon sur chaque variable tandis que par exemple le dispositif MNAR est mauvais pour la variable `prop`. Nous retenons donc le dispositif MAR pour l'imputation multiple par régression stochastique.
 
 **Conclusion**
 
-Nous avons utilisé le jeu de données `mites` pour générer des données manquantes suivant les 3 catégories MCAR, MAR et MNAR. Nous avons ensuite analyser ces 3 dispositifs dans une analyse univariée, une analyse bivariée et une analyse multidimentionnelle. Pour finir, nous avons imputer les données manquantes avec plusieurs méthodes différentes, de l'imputation simple à l'imputation multiple par régression stochastique.
+Nous avons généré des données manquantes sur le jeu de données `mites` afin de se confronter à un cas plus réaliste. Ces générations ont été effectuées selon trois mécanismes : MCAR, MAR et MNAR. Nous avons étudié ces dispositifs grâce à une analyse univariée, bivariée et multidimentionnelle. Pour finir, nous avons imputé les données manquantes avec plusieurs méthodes différentes, de l'imputation simple à l'imputation multiple par régression stochastique. Finalement, nous avons constaté que les résultats des différentes méthodes d'imputation dépendent grandement du jeu de données que l'on étudie : nous l'avons vu tout particulièrement lors de l'imputation multiple par régression stochastique selon les trois mécanismes. Il semblait y avoir moins de variabilité sur les données simulées artificiellement. C'est pourquoi, nous ne recommanderons pas une méthode d'imputation plus qu'une autre, et conseillerons plutôt de bien étudier le jeu de données en amont afin de faire les choix les plus pertinents.  
+Nous souhaitons également souligner que le jeu de données `mites` est de petite taille, ce qui a fortement influencé et parfois compliqué nos analyses, des modèles linéaires généralisés à l'étude des données manquantes.
 
 \newpage
 

@@ -1815,7 +1815,7 @@ Les imputations multiples obtiennent donc des intervalles plus grands mais tente
 
 -   Taux de couverture de l'intervalle de confiance
 
-Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons en pourcentage dans le tableau suivant : 
+Enfin, nous allons analyser le taux de couverture des intervalles de confiance. En effet, la valeur attendue de la moyenne étant $0$, nous regardons combien de fois celle-ci est comprise dans l'intervalle obtenu. C'est ce que nous résumons en pourcentage dans le tableau suivant :
 
 ```{r, echo=F}
 tc.mcar.cc <- (sum(sign(IC.mcar.cc[,1]*IC.mcar.cc[,2])<0)*100/200)
@@ -1848,7 +1848,6 @@ rownames(L) <- c("Cas complets", "Imputation par la moyenne", "Imputation simple
 kable(data.frame(L), position="H", caption = "Taux de couverture de l'intervalle de confiance")
 ```
 
-
 Premièrement, ce tableau confirme les graphiques analysés plus haut. En effet, nous remarquons de manière évidente que le jeu de données associé au mécanisme MNAR n'a quasiment pas permis d'obtenir des intervalles de confiance contenant la vraie valeur que l'on cherche à estimer (la moyenne). De plus, concernant les mécanismes MCAR et MAR, nous voyons une différence pour les cas complets et l'imputation par la moyenne, puis les résultats sont semblables pour les autres. Notons tout de même que, contrairement à la longeur de l'intervalle, la taux de couverture semble être meilleur pour l'imputation multiple par régression que celle par régression stochastique.
 
 \newpage
@@ -1870,14 +1869,14 @@ mites1
 str(mites1)
 ```
 
-L'utilisation de la fonction `ampute` nécessite une attention particulière. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seule de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes. 
+L'utilisation de la fonction `ampute` nécessite une attention particulière. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seule de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes.
 
 ```{r}
 amp.mcar1 = ampute(mites1, prop = 0.10, mech = "MCAR")
 countNA(amp.mcar1$amp)
 ```
 
-En cherchant un peu plus loin, nous avons remarqué que l'argument `prop` signifie la proportion de lignes incomplètes dans notre jeu de données. Nous avons 70 observations pour 5 variables soit 350 données (\~350 cellules). Nous avons donc pensé qu'il était préférable de générer 10% de données manquantes sur l'ensemble de nos données, soit 10% de 350 données, ce qui equivaut à +/- 35 données manquantes. Pour cela, nous devons utiliser l'argument `bycases` comme `FALSE`. En effet, l'argument `bycases` étant `FALSE` signifie que la proportion de données manquantes est définie en terme de cellules et non en terme de lignes, qui est la valeur par défault. Pour spécifier les 3 différents méchanismes MCAR, MAR et MNAR, nous utilisons l'argument `mech`.
+En cherchant un peu plus loin, nous avons remarqué que l'argument `prop` signifie la proportion de lignes incomplètes dans notre jeu de données. Nous avons 70 observations pour 5 variables soit 350 données (\~350 cellules). Nous avons donc pensé qu'il était préférable de générer 10% de données manquantes sur l'ensemble de nos données, soit 10% de 350 données, ce qui equivaut à +/- 35 données manquantes. Pour cela, nous devons utiliser l'argument `bycases` comme `FALSE`. En effet, l'argument `bycases` étant `FALSE` signifie que la proportion de données manquantes est définie en terme de cellules et non en terme de lignes, qui est la valeur par défault. Pour spécifier les 3 différents méchanismes MCAR, MAR et MNAR, nous utilisons l'argument `mech`. Voici les lignes de codes nécéssaires pour générer les données manquantes. 
 
 -   Mécanisme **MCAR** (**M**issing **C**ompletely **A**t **R**andom)
 
@@ -2009,8 +2008,9 @@ Le V de Cramer est très proche de 1 pour chaque paire de variables et chaque di
 
 Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle. L'analyse des correspondances multiples est une technique descriptive visant à résumer l'information contenue dans un grand nombre de variables afin de faciliter l'interprétention des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles. L'analyse se concentre sur ses deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données. Le nom des variables finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o".
 
-```{r, echo = F, fig.height=5, fig.cap= "MCAR"}
+```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCAR", warning=FALSE}
 set.seed(123)
+par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
 mis.ind[is.na(amp.mcar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mcar$amp)
@@ -2018,8 +2018,9 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=5, fig.cap= "MAR"}
+```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MAR"}
 set.seed(123)
+par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
 mis.ind[is.na(amp.mar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mar$amp)
@@ -2027,8 +2028,9 @@ resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=5, fig.cap= "MNAR"}
+```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MNAR"}
 set.seed(123)
+par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
 mis.ind[is.na(amp.mnar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mnar$amp)
@@ -2038,7 +2040,7 @@ plot(resMCA,invis="ind",title="MCA graph of the categories")
 
 ### Imputer les données manquantes
 
-Nous allons maintenant imputer les données manquantes sur les trois dispositifs que nous avons crées précédement. Dans un premier temps, nous effecturons des imputations simples (par la moyenne, la médiane, méthode LOVF...) puis nous terminerons sur une imputation multiple. 
+Nous allons maintenant imputer les données manquantes sur les trois dispositifs que nous avons crées précédement. Dans un premier temps, nous effecturons des imputations simples (par la moyenne, la médiane, méthode LOVF...) puis nous terminerons sur une imputation multiple.
 
 **Imputation simple**
 
@@ -2062,8 +2064,6 @@ set.seed(123)
 dat.moy.mar=impute(amp.mar$amp, what=mean)
 ```
 
-Nous remarquons que pour les 2 premières observations de la varible `Galumna` qui ont été imputé, nous obtenons des résultats complétements différents des résultats attendus. De même pour la 5ème observation de la variable `WatrCont`.
-
 **MNAR**
 
 ```{r}
@@ -2080,19 +2080,19 @@ Nous utilisons aussi la fonction `impute` du package `Hmisc`.
 **MCAR**
 
 ```{r}
-dat.med.mcar=impute(amp.mcar$amp, fun=median)
+dat.med.mcar=impute(amp.mcar$amp, what=median)
 ```
 
 **MAR**
 
 ```{r}
-dat.med.mar=impute(amp.mar$amp, fun=median)
+dat.med.mar=impute(amp.mar$amp, what=median)
 ```
 
 **MNAR**
 
 ```{r}
-dat.med.mnar=impute(amp.mnar$amp, fun=median)
+dat.med.mnar=impute(amp.mnar$amp, what=median)
 ```
 
 #### LOVF (Last observation carries forward)
@@ -2184,17 +2184,17 @@ Comme pour la méthode Loess, nous remarquons que les variables `Galumna` et `to
 
 A noter que la méthode SVD, décomposition en valeurs singulières, ne fonctionnent pas dans notre cas. Il y a trop de données manquantes, cela introduit un biais important dans le calcul de base de décomposition.
 
-**Imputation multiple** 
+**Imputation multiple**
 
-Dans l'imputation simple, une valeur unique ne peut pas refléter l'incertitude sur la prédiction. Une autre approche est l’imputation multiple, qui consiste à imputer successivement plusieurs valeurs à chaque donnée manquante. Plusieurs jeux de données complétés sont ainsi générés, respectant les caractéristiques de la distribution des données observées (variabilité et corrélation entre les variables). Des analyses standards sont ensuite menées séparément sur chaque jeu de données complétés, puis leurs résultats sont combinés pour fournir un résultat global. 
+Dans l'imputation simple, une valeur unique ne peut pas refléter l'incertitude sur la prédiction. Une autre approche est l'imputation multiple, qui consiste à imputer successivement plusieurs valeurs à chaque donnée manquante. Plusieurs jeux de données complétés sont ainsi générés, respectant les caractéristiques de la distribution des données observées (variabilité et corrélation entre les variables). Des analyses standards sont ensuite menées séparément sur chaque jeu de données complétés, puis leurs résultats sont combinés pour fournir un résultat global.
 
 Nous allons suivre la même démarche que nous avons fait sur les données générées dans la partie précédente toujours en utilisant la fonction `mice`.
 
--   Imputation multiple par régression stochastique 
+-   Imputation multiple par régression stochastique
 
-Nous utilisons l'argument `m=20` ce qui signifie que nous obtenons $20$ jeu de données imputées. 
+Nous utilisons l'argument `m=20` ce qui signifie que nous obtenons $20$ jeu de données imputées.
 
-```{r, echo = F, message=FALSE, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique"}
+```{r, echo = F, message=FALSE, fig.height=4, fig.cap= "MCAR - Imputation multiple par régression stochastique", warning=FALSE}
 set.seed(123)
 mcar.mice <- mice(amp.mcar$amp, method = "norm.nob", m = 20, print = FALSE)
 mar.mice <- mice(amp.mar$amp, method = "norm.nob", m = 20, print = FALSE)
@@ -2203,16 +2203,17 @@ mnar.mice <- mice(amp.mnar$amp, method = "norm.nob", m = 20, print = FALSE)
 stripplot(mcar.mice, pch = 20, cex = 1, cex.main = 1, main = "MCAR")
 ```
 
-```{r, echo = F, message=FALSE,  fig.height=4,fig.cap= "MAR - Imputation multiple par régression stochastique"}
+```{r, echo = F, message=FALSE,  fig.height=4,fig.cap= "MAR - Imputation multiple par régression stochastique", warning=FALSE}
 stripplot(mar.mice, pch = 20, cex = 1, cex.main = 1, main = "MAR")
 ```
 
-```{r, echo = F, message=FALSE, fig.height=4,fig.cap= "MNAR - Imputation multiple par régression stochastique"}
+```{r, echo = F, message=FALSE, fig.height=4,fig.cap= "MNAR - Imputation multiple par régression stochastique", warning=FALSE}
 stripplot(mnar.mice, pch = 20, cex = 1, cex.main = 1, main = "MNAR")
 ```
-Les données imputées sont en rouges. On remarque des différences dans les 3 dispositifs. En effet, dans le dispositif MNAR et plus particulièrement pour la variable `prop`, les données imputées ne respectent pas les données initiales. En comparaison, les dispositifs MCAR et MAR pour la variable `prop` respectent bien la distribution des données initiales. D'un point de vue global, les deux dispositifs MCAR et MAR respectent assez bien la distribution des données initiales. 
 
-Nous allons maintenant, identiquement à la partie précédente, analyse et combiner les données en utilisant les fonctions `with` et `pool` pour récuperer la moyenne estimée. 
+Les données imputées sont en rouges. On remarque des différences dans les 3 dispositifs. En effet, dans le dispositif MNAR et plus particulièrement pour la variable `prop`, les données imputées ne respectent pas les données initiales. En comparaison, les dispositifs MCAR et MAR pour la variable `prop` respectent bien la distribution des données initiales. D'un point de vue global, les deux dispositifs MCAR et MAR respectent assez bien la distribution des données initiales.
+
+Nous allons maintenant, identiquement à la partie précédente, analyse et combiner les données en utilisant les fonctions `with` et `pool` pour récuperer la moyenne estimée.
 
 ```{r, echo = F}
 set.seed(123)
@@ -2233,7 +2234,7 @@ mean(mites1$prop)
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de prop après combinaison des 20 imputations par régression stochastique")
 ```
 
-En comparaison avec la moyenne sur la variable `prop` des données initiales du jeu de données `mites`, nous avons que le dispositif MAR et MCAR obtiennent les meilleurs résultats. 
+En comparaison avec la moyenne sur la variable `prop` des données initiales du jeu de données `mites`, nous avons que le dispositif MAR et MCAR obtiennent les meilleurs résultats.
 
 ```{r, echo = F}
 set.seed(123)
@@ -2254,7 +2255,7 @@ mean(mites1$Galumna)
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Galumna après combinaison des 20 imputations par régression stochastique")
 ```
 
-Pour la variable `Galumna`, le resultat n'est pas similaire, dans ce cas le dispositif MNAR a le meilleur résultat. 
+Pour la variable `Galumna`, le resultat n'est pas similaire, dans ce cas le dispositif MNAR a le meilleur résultat.
 
 ```{r, echo = F}
 set.seed(123)
@@ -2275,12 +2276,11 @@ mean(mites1$totalabund)
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de totalabund après combinaison des 20 imputations par régression stochastique")
 ```
 
-Pour ces $3$ variables différentes, ils n'y a pas de dispositif qui se démarquent des autres. Cependant, le dispositif MAR semble être plutot bon sur chaque variable tandis que par exemple le dispositif MNAR est mauvais pour la variable `prop`. Nous retenons donc le dispositif MAR pour l'imputation multiple par régression stochastique. 
+Pour ces $3$ variables différentes, ils n'y a pas de dispositif qui se démarquent des autres. Cependant, le dispositif MAR semble être plutot bon sur chaque variable tandis que par exemple le dispositif MNAR est mauvais pour la variable `prop`. Nous retenons donc le dispositif MAR pour l'imputation multiple par régression stochastique.
 
 **Conclusion**
 
-Nous avons utilisé le jeu de données `mites` pour générer des données manquantes suivant les 3 catégories MCAR, MAR et MNAR. Nous avons ensuite analyser ces 3 dispositifs dans une analyse univariée, une analyse bivariée et une analyse multidimentionnelle. Pour finir, nous avons imputer les données manquantes avec plusieurs méthodes différentes, de l'imputation simple à l'imputation multiple par régression stochastique. 
-
+Nous avons utilisé le jeu de données `mites` pour générer des données manquantes suivant les 3 catégories MCAR, MAR et MNAR. Nous avons ensuite analyser ces 3 dispositifs dans une analyse univariée, une analyse bivariée et une analyse multidimentionnelle. Pour finir, nous avons imputer les données manquantes avec plusieurs méthodes différentes, de l'imputation simple à l'imputation multiple par régression stochastique.
 
 \newpage
 

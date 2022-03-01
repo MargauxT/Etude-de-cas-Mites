@@ -2255,7 +2255,7 @@ mean(mites1$Galumna)
 kable(data.frame(mean.mcar.mice,mean.mar.mice,mean.mnar.mice), col.names = c("MCAR", "MAR", "MNAR"), row.names = FALSE, position="H", caption = "Moyenne de Galumna après combinaison des 20 imputations par régression stochastique")
 ```
 
-Pour la variable `Galumna`, le resultat n'est pas similaire, dans ce cas le dispositif MNAR a le meilleur résultat.
+Pour la variable `Galumna`, le résultat n'est pas similaire, dans ce cas le dispositif MNAR a le meilleur résultat.
 
 ```{r, echo = F}
 set.seed(123)

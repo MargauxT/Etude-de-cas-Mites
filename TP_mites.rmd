@@ -1868,36 +1868,40 @@ str(mites1)
 
 L'utilisation de la fonction `ampute` nécessite une attention particulière. En effet, dans l'aide de la fonction nous avons que l'argument `prop` signifie "un scalaire spécifiant la proportion de données manquantes". Cependant, nous avons remarqué que l'utilisation seule de cet argument ne nous donne pas 10% de données manquantes sur notre jeu de données. Dans notre exemple ci dessous nous avons seulement 8 données manquantes.
 
-```{r}
+```{r, echo=FALSE}
 set.seed(123)
 amp.mcar1 = ampute(mites1, prop = 0.10, mech = "MCAR")
 countNA(amp.mcar1$amp)
+cat("Nombre de NA : ",countNA(amp.mcar1$amp))
 ```
 
 En cherchant un peu plus loin, nous avons remarqué que l'argument `prop` signifie la proportion de lignes incomplètes dans notre jeu de données. Nous avons 70 observations pour 5 variables soit 350 données (\~350 cellules). Nous avons donc pensé qu'il était préférable de générer 10% de données manquantes sur l'ensemble de nos données, soit 10% de 350 données, ce qui equivaut à +/- 35 données manquantes. Pour cela, nous devons utiliser l'argument `bycases` comme `FALSE`. En effet, l'argument `bycases` étant `FALSE` signifie que la proportion de données manquantes est définie en terme de cellules et non en terme de lignes, qui est la valeur par défaut. Pour spécifier les 3 différents méchanismes MCAR, MAR et MNAR, nous utilisons l'argument `mech`. Voici les lignes de codes nécéssaires pour générer les données manquantes.
 
 -   Mécanisme **MCAR** (**M**issing **C**ompletely **A**t **R**andom)
 
-```{r}
+```{r, echo=FALSE}
 set.seed(123)
 amp.mcar = ampute(mites1, prop = 0.10, mech = "MCAR", bycases = FALSE)
 countNA(amp.mcar$amp)
+cat("Nombre de NA pour le dispositif MCAR : ",countNA(amp.mcar$amp))
 ```
 
 -   Mécanisme **MAR** (**M**issing **A**t **R**andom)
 
-```{r}
+```{r, echo=FALSE}
 set.seed(123)
 amp.mar = ampute(mites1, prop = 0.10, mech = "MAR", bycases = FALSE)
 countNA(amp.mar$amp)
+cat("Nombre de NA pour le dispositif MAR : ", countNA(amp.mar$amp))
 ```
 
 -   Mécanisme **MNAR** (**M**issing **N**ot **A**t **R**andom)
 
-```{r}
+```{r, echo = FALSE}
 set.seed(123)
 amp.mnar = ampute(mites1, prop = 0.10, mech = "MNAR", bycases = FALSE)
 countNA(amp.mnar$amp)
+cat("Nombre de NA pour le dispositif MNAR : ", countNA(amp.mnar$amp))
 ```
 
 ```{r, echo = F}
@@ -2006,7 +2010,7 @@ Le V de Cramer est très proche de 1 pour chaque paire de variables et chaque di
 
 Nous utiliserons la fonction `MCA` du package `FactoMineR` pour l'analyse multidimensionnelle. L'analyse des correspondances multiples est une technique descriptive visant à résumer l'information contenue dans un grand nombre de variables afin de faciliter l'interprétation des corrélations existantes entre ces différentes variables. On cherche à savoir quelles sont les variables corrélées entre elles. L'analyse se concentre sur les deux premiers axes qui constitueront un bon résumé des variations observables dans le jeu de données. Le nom des variables finissant par "-m" signifie les données manquantes pour cette variable, contrairement au nom des variables se termiant par "-o".
 
-```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCA pour MCAR", warning=FALSE}
+```{r, echo = F, fig.height=4, fig.show='hold', fig.cap= "MCA pour MCAR", warning=FALSE}
 set.seed(123)
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mcar$amp),ncol=ncol(amp.mcar$amp))
@@ -2015,6 +2019,7 @@ dimnames(mis.ind) <- dimnames(amp.mcar$amp)
 resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
+On observe $3$ outliers, positionnés à trois endroits bien distincts qui sont les données manquantes pour les variables `WatrCont`, `SubsDens` et `prop`. Cela signifie que l'imputation n'est pas réalisée de la même manière pour ces 3 variables, contrairement aux variables imputées `Galumna` et `totalabund` qui semblent bien corrélées.
 
 ```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCA pour MAR"}
 set.seed(123)
@@ -2023,10 +2028,12 @@ mis.ind <- matrix("o",nrow=nrow(amp.mar$amp),ncol=ncol(amp.mar$amp))
 mis.ind[is.na(amp.mar$amp)] <- "m"
 dimnames(mis.ind) <- dimnames(amp.mar$amp)
 resMCA <- MCA(mis.ind)
-plot(resMCA,invis="ind",title="MCA graph of the categories")
+plot(resMCA, invis="ind",title="MCA graph of the categories")
 ```
 
-```{r, echo = F, fig.height=3, fig.show='hold', fig.cap= "MCA pour MNAR"}
+Pour le dispositif MAR, on remarque une forte corrélation entre les variables des données manquantes `prop`, `Galumna` et `WartCont`. Cenpendant, les variables `SubsDens` et `totalabund` ne sont pas corrélées entre elles deux, ni avec le reste des variables. 
+
+```{r, echo = F, fig.height=4, fig.show='hold', fig.cap= "MCA pour MNAR"}
 set.seed(123)
 par(mfrow = c(2,2))
 mis.ind <- matrix("o",nrow=nrow(amp.mnar$amp),ncol=ncol(amp.mnar$amp))
@@ -2035,6 +2042,9 @@ dimnames(mis.ind) <- dimnames(amp.mnar$amp)
 resMCA <- MCA(mis.ind)
 plot(resMCA,invis="ind",title="MCA graph of the categories")
 ```
+Pour ce dispositf, MNAR, il n'y a aucune corrélation entre les variables des données manquantes qui se situent chacune de part et d'autre des deux axes. 
+
+Après cette analyse multidimentionelle, le dispositif MAR semble le plus performant, du fait des fortes corrélations entre les variables des données manquantes, ainsi que les variables du jeu de données. 
 
 ### Imputer les données manquantes
 
@@ -2048,26 +2058,19 @@ Nous allons maintenant imputer les données manquantes sur les trois dispositifs
 
 Nous utilisons la fonction `impute` du package `Hmisc`.
 
-**MCAR**
-
-```{r}
+```{r, , echo = F}
 set.seed(123)
 dat.moy.mcar=impute(amp.mcar$amp, what=mean)
-```
-
-**MAR**
-
-```{r}
-set.seed(123)
 dat.moy.mar=impute(amp.mar$amp, what=mean)
-```
-
-**MNAR**
-
-```{r}
-set.seed(123)
 dat.moy.mnar=impute(amp.mnar$amp, what=mean)
 ```
+
+```{r, echo = F}
+head(amp.mcar$amp)
+head(as.matrix(dat.moy.mcar))
+```
+
+On remarque pour pour l'observation 4 et 5 de la variable `Galumna` du nouveau jeu de données avec les données manquantes imputées, nous n'avons pas du tout le resultat espéré. L'imputation par la moyenne n'est pas efficace dans notre cas. Nous avons testé sur le dispositif MCAR. Nous retrouvons la même conclusion pour les deux autres dispositifs. 
 
 #### Par la médiane
 
@@ -2075,23 +2078,19 @@ dat.moy.mnar=impute(amp.mnar$amp, what=mean)
 
 Nous utilisons aussi la fonction `impute` du package `Hmisc`.
 
-**MCAR**
-
-```{r}
+```{r, , echo = F}
+set.seed(123)
 dat.med.mcar=impute(amp.mcar$amp, what=median)
-```
-
-**MAR**
-
-```{r}
 dat.med.mar=impute(amp.mar$amp, what=median)
-```
-
-**MNAR**
-
-```{r}
 dat.med.mnar=impute(amp.mnar$amp, what=median)
 ```
+
+```{r, echo = F}
+head(amp.mar$amp)
+head(as.matrix(dat.med.mar))
+```
+
+Nous faisons le même constat que pour l'imputation par la moyenne. L'imputation par la médiane n'est pas efficace dans notre cas.
 
 #### LOVF (Last observation carries forward)
 
@@ -2099,29 +2098,26 @@ dat.med.mnar=impute(amp.mnar$amp, what=median)
 
 Cette méthode remplace la valeur manquante par la dernière valeur disponible. Cependant, elle peut donner des résultats biaisés, même en présence de MCAR. Nous utilisons la fonction `na.locf` du package `zoo`.
 
-**MCAR**
-
-```{r}
+```{r, , echo = F}
+set.seed(123)
 dat.locf=na.locf(amp.mcar$amp,na.rm=FALSE)
 dat.locf=na.locf(dat.locf,na.rm=FALSE,
    fromLast=TRUE)
-```
-
-**MAR**
-
-```{r}
 dat.locf=na.locf(amp.mar$amp,na.rm=FALSE)
 dat.locf=na.locf(dat.locf,na.rm=FALSE,
    fromLast=TRUE)
-```
-
-**MNAR**
-
-```{r}
 dat.locf=na.locf(amp.mnar$amp,na.rm=FALSE)
 dat.locf=na.locf(dat.locf,na.rm=FALSE,
    fromLast=TRUE)
 ```
+
+```{r, echo = F}
+head(amp.mar$amp)
+head(as.matrix(dat.locf))
+```
+
+Nous remarquons que la méthode fonctionne très bien dans notre cas. On observe que pour la première observation de la variable `prop` (qui est manquante) elle est bien imputée par la deuxième observation qui elle n'est pas manquante. De même pour l'imputation de la 3ème observation de la variable `SubsDens` qui est remplacée par la valeur de la 2ème observation. 
+Cette méthode semble très concluante dans notre cas. 
 
 #### k plus proches voisins kNN
 
@@ -2129,23 +2125,19 @@ dat.locf=na.locf(dat.locf,na.rm=FALSE,
 
 L'idée de cette méthode est de calculer les distances entre observations, et d'attribuer aux données manquantes la moyenne des valeurs observées chez les k plus proches voisins. Nous utilisons la fonction `kNN` du package `VIM`.
 
-**MCAR**
-
-```{r}
-dat.kNN=kNN(amp.mcar$amp, k=5, imp_var=FALSE)
+```{r, , echo = F}
+set.seed(123)
+dat.kNN.mcar=kNN(amp.mcar$amp, k=5, imp_var=FALSE)
+dat.kNN.mar=kNN(amp.mar$amp, k=5, imp_var=FALSE)
+dat.kNN.mnar=kNN(amp.mnar$amp, k=5, imp_var=FALSE)
 ```
 
-**MAR**
-
-```{r}
-dat.kNN=kNN(amp.mar$amp, k=5, imp_var=FALSE)
+```{r, echo = F}
+head(amp.mar$amp)
+head(as.matrix(dat.kNN.mar))
 ```
 
-**MNAR**
-
-```{r}
-dat.kNN=kNN(amp.mnar$amp, k=5, imp_var=FALSE)
-```
+L'imputation semble tout à fait cohérente avec les valeurs attendues. Nous retenons, de plus, cette méthode comme très efficace dans notre cas et pour notre jeu de données `mites`.
 
 #### Loess (Régression locale)
 
@@ -2153,9 +2145,8 @@ dat.kNN=kNN(amp.mnar$amp, k=5, imp_var=FALSE)
 
 Cette méthode consiste à construire un polynôme de degré faible par méthode des moindres carrés pondérés en fonction de la proximité entre les observations jugées semblables à celle sur laquelle nous voulons procéder à l'imputation.
 
-**MCAR**
-
-```{r}
+```{r, echo = F}
+set.seed(123)
 dat.imputed=rbind(colnames(amp.mcar$amp),amp.mcar$amp)
 indices=1:nrow(amp.mcar$amp)
 dat.loess= apply(dat.imputed, 2, function(j) {
@@ -2170,9 +2161,8 @@ Avec cette méthode nous remarquons que les variables `Galumna` et `totalabund` 
 
  
 
-**MCAR**
-
-```{r}
+```{r, echo = F}
+set.seed(123)
 dat.missForest<-missForest(amp.mcar$amp,maxiter=10,
         ntree = 200, variablewise = TRUE)$ximp
 head(dat.missForest)
